@@ -1,6 +1,6 @@
 import json
 import socket
-
+from message_classes import *
 
 
 
@@ -12,7 +12,7 @@ class Server:
     def connect(self, host: str = "127.0.0.1", port: int = 12300):
         self.sock.connect((host, port))
 
-    def init_agent(self, agent_message):
+    def init_agent(self, agent_message: AuthRequest):
         msg = agent_message.msg()
         print(f"Sending: {msg}")
         self.sock.sendall(msg.encode())
@@ -20,7 +20,7 @@ class Server:
         print(f"Response: {response}")
         return True if response["content"]["result"] == "ok" else False
 
-    def send(self, agent_message):
+    def send(self, agent_message: ActionReply):
         msg = agent_message.msg()
         print(f"Sending: {msg}")
         self.sock.sendall(msg.encode())

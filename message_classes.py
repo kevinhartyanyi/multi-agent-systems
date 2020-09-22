@@ -1,5 +1,6 @@
 from enum import Enum
 import json
+from action_classes import Action
 
 class ServerMessageTypes(Enum):
     AUTHRESPONSE = 1
@@ -23,10 +24,10 @@ class AgentMessageTypes(Enum):
 
 
 class AuthRequest:
-    def __init__(self, user: str, password: str):
+    def __init__(self, user: str, password: int):
         self.type = "auth-request"
         self.user = user
-        self.pw = password
+        self.pw = str(password)
         self.json = {"type": self.type, "content": {}}
 
     def msg(self) -> str:
@@ -34,12 +35,12 @@ class AuthRequest:
         return json.dumps(self.json) + "\0"
 
 
-class Action:
-    def __init__(self, id: int, action_type: str, action_array: list):
+class ActionReply:
+    def __init__(self, id: int, action: Action):
         self.type = "action"
         self.id = id
-        self.action_type = action_type
-        self.action_array = action_array
+        self.action_type = action.type
+        self.action_array = action.param
         self.json = {"type": self.type, "content": {}}
 
     def msg(self) -> str:
