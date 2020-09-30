@@ -1,7 +1,7 @@
 import json
 import socket
 from message_classes import *
-
+import time
 
 
 class Server:
@@ -10,7 +10,16 @@ class Server:
         self.connect()
 
     def connect(self, host: str = "127.0.0.1", port: int = 12300):
-        self.sock.connect((host, port))
+        connected = False
+        wait_sec = 2
+        while not connected:
+            try:
+                self.sock.connect((host, port))
+            except ConnectionRefusedError:
+                print(f"Connection Refused. Trying again after {wait_sec} seconds")
+                time.sleep(wait_sec)
+            else:
+                connected = True
 
     def init_agent(self, agent_message: AuthRequest):
         msg = agent_message.msg()
