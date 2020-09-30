@@ -27,6 +27,9 @@ while response["type"] != "bye":
               f"Time: {content['time']}")
     elif response["type"] == "request-action":
         content = response["content"]
+        print(content["percept"])
+
+
         print("Send action")
         high_level_thinking = directions[random.randint(0, len(directions) - 1)]
         action = ActionMove(high_level_thinking)
