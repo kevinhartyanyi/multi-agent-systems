@@ -81,20 +81,22 @@ class Server(gym.Env):
 
         Thing Types:
             Num   Type
-            0     Entity
-            1     Block
-            2     Dispenser
-            3     Marker
+            0     Nothing
+            1     Entity
+            2     Block
+            3     Dispenser
+            4     Marker
 
     Reward:
         Currently using the 'score' returned by the server in every request-action message.
         TODO: More robust reward implementation
 
     Starting State:
-
+        All observations are from the server
 
     Episode Termination:
         Server returns 'sim-end' message.
+        TODO: More stopping points (maybe)
 
     """
 
@@ -113,7 +115,7 @@ class Server(gym.Env):
         low = np.zeros(vision_size, 2)
         high = np.zeros(vision_size, 2)
         high[:, 0] = 2  # cell type
-        high[:, 1] = 3  # thing type
+        high[:, 1] = 4  # thing type
 
         # Other alternative: spaces.Dict()
         """
@@ -144,7 +146,31 @@ class Server(gym.Env):
         pass
 
     def step(self, action):
-        pass
+        """
+        Run one timestep of the environment's dynamics. When end of
+        episode is reached, you are responsible for calling `reset()`
+        to reset this environment's state.
+
+        Args:
+            action (object): an action provided by the agent
+
+        Returns:
+            observation (object): agent's observation of the current environment
+            reward (float) : amount of reward returned after previous action
+            done (bool): whether the episode has ended, in which case further step() calls will return undefined results
+            info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
+        """
+        if action == 0:
+            #cell_type, thing = self.state[]
+            pass
+        elif action == 1:
+            pass
+        elif action == 2:
+            pass
+        elif action == 3:
+            pass
+
+        return np.array(self.state), reward, done, {}
 
     def render(self, mode='human'):
         pass
