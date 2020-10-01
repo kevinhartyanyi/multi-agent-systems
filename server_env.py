@@ -6,6 +6,7 @@ from gym import spaces, logger
 from gym.utils import seeding
 import numpy as np
 import time
+import subprocess
 
 """Example: 
         {'lastActionParams': [], 'score': 0, 'lastAction': '', 'things': [{'x': 0, 'y': 0, 'details': 
@@ -101,20 +102,20 @@ class Server(gym.Env):
     """
 
     def __init__(self):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.connect()
+        #self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #self.connect()
 
         """Agents perceive the state of a cell depending on their vision. E.g. if they have a vision of 5, 
         they can sense all cells that are up to 5 steps away. """
-        self.agent_vision = 5
+        self.agent_vision = 5 ##TODO
 
-        self.action_space = spaces.Discrete(4)
+        self.action_space = spaces.Discrete(4) # NOT INCLUSIVE
 
         vision_size = vision_grid_size(5)
 
-        low = np.zeros(vision_size, 2)
-        high = np.zeros(vision_size, 2)
-        high[:, 0] = 2  # cell type
+        low = np.zeros((vision_size, 2))
+        high = np.zeros((vision_size, 2))
+        high[:, 0] = 2  # cell type -> high is inclusive
         high[:, 1] = 4  # thing type
 
         # Other alternative: spaces.Dict()
@@ -126,24 +127,41 @@ class Server(gym.Env):
                 - [1] the thing on the cell (if any)
             low,high: Independent bounds for each dimension
         """
-        self.observation_space = gym.spaces.Box(
+        """ Observation_space
+            - lastActionParams: Discrete(4)
+            - lastAction: Discrete(1) ##TODO
+            - lastActionResult: Discrete(2) # Failed or not
+            - things/terrain: Box((vision_size,2)) ##TODO no details included
+            * score
+            * attached
+            * energy
+            * task
+        """
+        self.observation_space = spaces.Tuple((
+            spaces.Discrete(4),
+            spaces.Discrete(1),
+            spaces.Discrete(2),
+            spaces.Box(
             low=low,
             high=high,
-            shape=(vision_size, 2),
+            shape=((vision_size, 2)),
             dtype=np.int
-        )
+            )
+        ))
 
         # self.seed()
         # self.viewer = None
-        self.state = None
+        self.state = None # Observation_space instance
+        
 
-        self.steps_beyond_done = None
+        #self.steps_beyond_done = None
 
     def seed(self, seed=None):
         pass
 
     def reset(self):
-        pass
+        ## TODO Start server (subprocess)
+        return None
 
     def step(self, action):
         """
@@ -169,12 +187,19 @@ class Server(gym.Env):
             pass
         elif action == 3:
             pass
-
+        
+        reward = 0
+        done = False
         return np.array(self.state), reward, done, {}
 
     def render(self, mode='human'):
         pass
-
+        
+    def update(self, msg):
+        self.state = self.observation_space.sample()
+        return self.state 
+        
+"""
     def connect(self, host: str = "127.0.0.1", port: int = 12300):
         connected = False
         wait_sec = 2
@@ -208,3 +233,6 @@ class Server(gym.Env):
         response = json.loads(recv.rstrip('\x00'))
         print(f"Response: {response}")
         return response
+"""
+
+my_serv = Server()
