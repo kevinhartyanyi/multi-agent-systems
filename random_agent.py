@@ -3,6 +3,7 @@ import random, time
 import socket, json
 from message_classes import *
 from action_classes import *
+import numpy as np
 
 directions = ["n", "s", "w", "e"]
 
@@ -15,6 +16,7 @@ class Random_Agent(object):
         self.mem = []
         self.state = None
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.map = np.array([])
 		
     def act(self):
         ind = random.randint(0, len(directions) - 1)

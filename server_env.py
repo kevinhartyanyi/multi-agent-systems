@@ -52,6 +52,27 @@ def vision_grid_size(vision):
         return 0
 
 
+def convert_indexes_to_observation_vector(x, y, vision, vision_grid_size):
+    def current_step(size, steps):
+        if steps <= 0:
+            return 0
+        step = size - 2
+        return step + (current_step(step, steps - 1))
+
+    base = vision_grid_size / 2
+    base_width = 2 * vision + 1
+
+    base_add = (1 if x != 0 else 0) * abs(x)
+
+    ind = -1
+    if x > 0:
+        ind = (base - (base_add + current_step(base_width, abs(x)))) - y
+    else:
+        ind = (base + (base_add + current_step(base_width, abs(x)))) - y
+
+    return int(ind)
+
+
 class Server(gym.Env):
     """
     Description:
@@ -111,10 +132,10 @@ class Server(gym.Env):
 
         self.action_space = spaces.Discrete(4) # NOT INCLUSIVE
 
-        vision_size = vision_grid_size(5)
+        self.vision_size = vision_grid_size(5)
 
-        low = np.zeros((vision_size, 2))
-        high = np.zeros((vision_size, 2))
+        low = np.zeros((self.vision_size, 2))
+        high = np.zeros((self.vision_size, 2))
         high[:, 0] = 2  # cell type -> high is inclusive
         high[:, 1] = 4  # thing type
 
@@ -144,7 +165,7 @@ class Server(gym.Env):
             spaces.Box(
             low=low,
             high=high,
-            shape=((vision_size, 2)),
+            shape=((self.vision_size, 2)),
             dtype=np.int
             )
         ))
@@ -196,8 +217,49 @@ class Server(gym.Env):
         pass
         
     def update(self, msg):
-        self.state = self.observation_space.sample()
-        return self.state 
+        #self.state = self.observation_space.sample()
+
+        observation_map = np.zeros((self.vision_size, 2))
+
+        things = msg['things']
+        terrain = msg['terrain']
+        print(f"\n\n\nThings: {things}")
+        print(f"Terrain: {terrain}")
+
+        for th in things:
+            x = th["x"]
+            y = th["y"]
+            detail = th["details"]
+            typ = th["type"]
+            ind = convert_indexes_to_observation_vector(x,y, self.agent_vision, self.vision_size)
+            print(f"Thing detail: {detail}")
+            print(f"Map ind: {ind}")
+            if detail == "A":
+                observation_map[ind, 0] = 1
+
+        terrain_values = [("goal", 1),("obstacle", 2)]
+
+        for tr in terrain_values:
+            name, value = tr
+            terran_cords = []
+            try:
+                terran_cords = terrain[name]
+                print(f"Terrain cords: {terran_cords}")
+                for cords in terran_cords:
+                    x, y = cords
+                    ind = convert_indexes_to_observation_vector(x, y, self.agent_vision, self.vision_size)
+                    observation_map[ind, 1] = value
+            except:
+                print(f"Terrain: {name} not found")
+
+
+
+        print(f"observation_map: {observation_map}\n\n\n")
+
+        self.state = (0,0,0,observation_map)
+        #print(self.state)
+
+        return self.state
         
 """
     def connect(self, host: str = "127.0.0.1", port: int = 12300):

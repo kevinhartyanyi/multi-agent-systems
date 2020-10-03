@@ -2,13 +2,15 @@ from server_env import *
 from message_classes import *
 from action_classes import *
 from random_agent import *
+import time
 
 """
 TODO: Check if requires change according to:
 https://github.com/openai/gym/blob/master/docs/creating-environments.md
 https://stackoverflow.com/questions/45068568/how-to-create-a-new-gym-environment-in-openai
 """
-env = gym.make(Server())
+#env = gym.make(Server())
+env = Server()
 
 agent_id = 1
 agent1 = Random_Agent("agentA1", agent_id, env)
@@ -34,6 +36,11 @@ while response["type"] == "request-action":
     
     agent1.send(action)
     response = agent1.receive()
+
+
+    # TODO: Only for testing
+    #time.sleep(10)
+    input()
     
 print(actions)
     
