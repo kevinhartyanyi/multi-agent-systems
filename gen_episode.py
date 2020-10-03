@@ -3,7 +3,12 @@ from message_classes import *
 from action_classes import *
 from random_agent import *
 
-env = Server()
+"""
+TODO: Check if requires change according to:
+https://github.com/openai/gym/blob/master/docs/creating-environments.md
+https://stackoverflow.com/questions/45068568/how-to-create-a-new-gym-environment-in-openai
+"""
+env = gym.make(Server())
 
 agent_id = 1
 agent1 = Random_Agent("agentA1", agent_id, env)
