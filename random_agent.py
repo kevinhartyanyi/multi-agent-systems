@@ -32,11 +32,11 @@ class Random_Agent(object):
         print("Direction: ", direction)
         # TODO: Maybe switch the values???
         if direction == "n":
-            self.map[:, 1] -= 1
+            self.map[:, 1] += 1
         elif direction == "w":
             self.map[:, 0] += 1
         elif direction == "s":
-            self.map[:, 1] += 1
+            self.map[:, 1] -= 1
         elif direction == "e":
             self.map[:, 0] -= 1
 
@@ -66,7 +66,7 @@ class Random_Agent(object):
         rows = abs(minY) + maxY + 1
 
         print(rows, cols)
-        print("Map shape: ", self.map.shape)
+
 
         things_map = np.zeros((rows, cols)) - 1
         terrain_map = np.zeros((rows, cols)) - 1
@@ -78,8 +78,10 @@ class Random_Agent(object):
             things_map[y,x] = value[2]
             terrain_map[y,x] = value[3]
 
+        print("Map shape: ", things_map.shape)
+
         print("Things map: ")
-        #print(things_map)
+        print(things_map)
 
         print("Terrain map: ")
         print(terrain_map)
