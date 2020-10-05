@@ -7,6 +7,7 @@ from gym.utils import seeding
 import numpy as np
 import time
 import subprocess
+import itertools
 
 """Example: 
         {'lastActionParams': [], 'score': 0, 'lastAction': '', 'things': [{'x': 0, 'y': 0, 'details': 
@@ -51,6 +52,49 @@ def vision_grid_size(vision):
     else:
         return 0
 
+
+def convert_indexes_to_observation_vector(x, y, vision, vision_grid_size):
+    def current_step(size, steps):
+        if steps <= 0:
+            return 0
+        step = size - 2
+        return step + (current_step(step, steps - 1))
+
+    base = vision_grid_size / 2
+    base_width = 2 * vision + 1
+
+    base_add = (1 if x != 0 else 0) * abs(x)
+
+    ind = -1
+    if x > 0:
+        ind = (base - (base_add + current_step(base_width, abs(x)))) - y
+    else:
+        ind = (base + (base_add + current_step(base_width, abs(x)))) - y
+
+    return int(ind)
+
+
+def vision_array(vision):
+    re = []
+    for v in range(-vision, vision + 1):
+        re += itertools.product([v], list(range((-vision) + abs(v), (vision + 1) - abs(v))))
+
+    return [list(l) + [0,0] for l in re]
+
+def find_ind_in_observation_vector(vector, val):
+    ind = -1
+    for i,v in enumerate(vector):
+        if v[:2] == val:
+            ind = i
+    return ind
+
+def find_ind_in_observation_np_array(array, val):
+    ind = -1
+    for i,v in enumerate(array):
+        x,y = v[:2]
+        if x == val[0] and y == val[1]:
+            ind = i
+    return ind
 
 class Server(gym.Env):
     """
@@ -111,12 +155,14 @@ class Server(gym.Env):
 
         self.action_space = spaces.Discrete(4) # NOT INCLUSIVE
 
-        vision_size = vision_grid_size(5)
+        self.vision_size = vision_grid_size(5)
 
-        low = np.zeros((vision_size, 2))
-        high = np.zeros((vision_size, 2))
-        high[:, 0] = 2  # cell type -> high is inclusive
-        high[:, 1] = 4  # thing type
+        low = np.zeros((self.vision_size, 4))
+        high = np.zeros((self.vision_size, 4))
+        low[:, :2] = -self.agent_vision
+        high[:, :2] = self.agent_vision
+        high[:, 2:3] = 2  # cell type -> high is inclusive
+        high[:, 3:] = 4  # thing type
 
         # Other alternative: spaces.Dict()
         """
@@ -144,7 +190,7 @@ class Server(gym.Env):
             spaces.Box(
             low=low,
             high=high,
-            shape=((vision_size, 2)),
+            shape=((self.vision_size, 4)),
             dtype=np.int
             )
         ))
@@ -196,8 +242,53 @@ class Server(gym.Env):
         pass
         
     def update(self, msg):
-        self.state = self.observation_space.sample()
-        return self.state 
+        #self.state = self.observation_space.sample()
+
+        observation_map = np.zeros((self.vision_size, 2))
+        observation_map = vision_array(self.agent_vision)
+
+        things = msg['things']
+        terrain = msg['terrain']
+        #print(f"\n\n\nThings: {things}")
+        #print(f"Terrain: {terrain}")
+
+        for th in things:
+            x = th["x"]
+            y = th["y"]
+            detail = th["details"]
+            typ = th["type"]
+
+            ind = find_ind_in_observation_vector(observation_map, [x,y])
+
+            #print(f"Thing detail: {detail}")
+            #print(f"Map ind: {ind}")
+            if detail == "A":
+                observation_map[ind][2] = 1
+
+        terrain_values = [("goal", 1),("obstacle", 2)]
+
+        for tr in terrain_values:
+            name, value = tr
+            terran_cords = []
+            try:
+                terran_cords = terrain[name]
+                #print(f"Terrain cords: {terran_cords}")
+                for cords in terran_cords:
+                    x, y = cords
+                    ind = find_ind_in_observation_vector(observation_map, [x,y])
+                    observation_map[ind][3] = value
+            except:
+                print(f"Terrain: {name} not found")
+
+
+        """for ob in observation_map:
+            print(ob)
+        print("\n\n\n")"""
+
+        self.state = (0,0,0,observation_map)
+        #print(self.state)
+
+        return self.state
         
 """
     def connect(self, host: str = "127.0.0.1", port: int = 12300):

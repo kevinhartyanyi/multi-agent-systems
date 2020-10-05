@@ -1,0 +1,66 @@
+{
+  "server" : {
+    "tournamentMode" : "round-robin",
+    "teamsPerMatch" : 1,
+    "teamSize" : 1,
+    "launch" : "key",
+    "port" : 12300,
+    "backlog" : 10000,
+    "agentTimeout" : 4000000,
+    "resultPath" : "results",
+    "logLevel" : "normal",
+    "logPath" : "logs",
+    "replayPath" : "replays",
+    "maxPacketLength" : 65536
+   },
+
+  "manual-mode" : [
+    ["A", "B"],
+    ["B", "C"],
+    ["A", "C"]
+  ],
+
+  "match" : [
+    {
+      "setup" : "conf/setup/test.txt",
+
+      "steps" : 500,
+      "randomSeed" : 17,
+      "randomFail" : 0,
+      "entities" : [{"standard" : 1}],
+      "clearSteps" : 3,
+      "clearEnergyCost" : 50,
+      "disableDuration" : 4,
+      "maxEnergy" : 300,
+      "attachLimit" : 10,
+
+      "grid" : {
+        "height" : 40,
+        "width" : 40,
+        "file" : "conf/maps/test40x40.bmp"
+      },
+
+      "blockTypes" : [3, 3],
+      "dispensers" : [2, 3],
+
+      "tasks" : {
+        "size" : [1, 1],
+        "duration" : [100, 200],
+        "probability" : 0.05
+      },
+
+      "events" : {
+        "chance" : 0,
+        "radius" : [3, 5],
+        "warning" : 5,
+        "create" : [5, 10]
+      }
+    }
+  ],
+
+  "teams" : {
+    "A" : [
+      ["agentA1", "1"]
+    ]  
+  }
+}
