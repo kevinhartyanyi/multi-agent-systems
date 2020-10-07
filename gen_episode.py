@@ -1,8 +1,5 @@
 from server_env import *
-from message_classes import *
-from action_classes import *
 from random_agent import *
-import time
 
 """
 TODO: Check if requires change according to:
@@ -32,7 +29,7 @@ while response["type"] == "request-action":
     action, ind = agent1.act()
     actions.append(ind)
     
-    state, reward, done, _ = env.step(ind)
+    state, reward, done, _ = env.step(action)
     
     agent1.send(action)
     response = agent1.receive()

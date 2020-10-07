@@ -1,12 +1,6 @@
-import json
-import socket
-from message_classes import *
 import gym
 from gym import spaces, logger
-from gym.utils import seeding
 import numpy as np
-import time
-import subprocess
 import itertools
 
 """Example: 
@@ -224,17 +218,8 @@ class Server(gym.Env):
             done (bool): whether the episode has ended, in which case further step() calls will return undefined results
             info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
         """
-        if action == 0:
-            #cell_type, thing = self.state[]
-            pass
-        elif action == 1:
-            pass
-        elif action == 2:
-            pass
-        elif action == 3:
-            pass
         
-        reward = 0
+        reward = action.eval(self.state)
         done = False
         return np.array(self.state), reward, done, {}
 
