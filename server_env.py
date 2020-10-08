@@ -14,6 +14,12 @@ import itertools
 'requirements': [{'x': 0, 'y': 1, 'details': '', 'type': 'b2'}], 'name': 'task11', 'deadline': 408}, """
 
 """
+'tasks': [{'reward': 10, 
+'requirements': [{'x': 0, 'y': 1, 'details': '', 'type': 'b1'}], 'name': 'task1', 'deadline': 203}, 
+{'reward': 10, 'requirements': [{'x': 0, 'y': 1, 'details': '', 'type': 'b2'}], 'name': 'task0', 'deadline': 126}]
+"""
+
+"""
 "clearEnergyCost" : 50
 "disableDuration" : 4,
 "maxEnergy" : 300,
@@ -89,6 +95,19 @@ def find_ind_in_observation_np_array(array, val):
         if x == val[0] and y == val[1]:
             ind = i
     return ind
+
+def dispenser_convert_to_int(dispenser_name):
+    re = -1
+    if dispenser_name == "b0": # 1 is entity A
+        re = 2
+    elif dispenser_name == "b1":
+        re = 3
+    elif dispenser_name == "b2":
+        re = 4
+    return re
+
+task_dict = {}
+
 
 class Server(gym.Env):
     """
@@ -250,6 +269,9 @@ class Server(gym.Env):
             if detail == "A":
                 observation_map[ind][2] = 1
 
+            if typ == "dispenser":
+                observation_map[ind][2] = dispenser_convert_to_int(detail)
+
         terrain_values = [("goal", 1),("obstacle", 2)]
 
         for tr in terrain_values:
@@ -273,7 +295,47 @@ class Server(gym.Env):
         self.state = (0,0,0,observation_map)
         #print(self.state)
 
-        return self.state
+        # Extract tasks
+        tasks = msg["tasks"]
+        preprocessed_tasks = []
+
+        for t in tasks:
+            #print("Requirements size: ", len(t["requirements"]))
+            #if len(t["requirements"]) > 1:
+            #    input()
+            reward = t["reward"]
+            requirements = t["requirements"][0] # TODO: Only using the first requirement
+            name = t["name"] # TODO: Currently not used
+            deadline = t["deadline"]
+            details = requirements["details"] # TODO: Find a use for this
+            x = requirements["x"]
+            y = requirements["y"]
+            dispenser = requirements["type"]
+
+            str_name = name # Only used for visualization
+
+            # Convert/Register task
+            if name in task_dict:
+                name = task_dict[name]
+            else:
+                counter = 0
+                if len(task_dict) != 0:
+                    counter = max([value for key, value in task_dict.items()]) + 1
+
+                task_dict[name] = counter
+                name = counter
+
+            # Convert dispenser
+            dispenser = dispenser_convert_to_int(dispenser)
+
+            preprocessed_tasks.append([
+                str_name, x, y, dispenser, deadline, reward
+            ])
+
+        print("Tasks: ", preprocessed_tasks)
+
+
+        return self.state, preprocessed_tasks
         
 """
     def connect(self, host: str = "127.0.0.1", port: int = 12300):
