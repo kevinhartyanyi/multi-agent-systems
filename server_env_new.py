@@ -24,8 +24,8 @@ class Server():
         #self.action_space = spaces.Discrete(4) # NOT INCLUSIVE ## TODO
 
         # Current perception
-        self.vision_grid = -1 * np.ones((vision_grid_size(self.agent_vision), 5) # Things, terrain
-        self.agent_attached = np.zeros((vision_grid_size(assumptions.TASK_SIZE), 2) # Attached -> Extract attached type from lastAction + lastActionParameter
+        self.vision_grid = -1 * np.ones((vision_grid_size(self.agent_vision), 5)) # Things, terrain
+        self.agent_attached = np.zeros((vision_grid_size(assumptions.TASK_SIZE), 2)) # Attached -> Extract attached type from lastAction + lastActionParameter
         self.forwarded_task_names = [''] * TASK_NUM # Names of the tracked tasks
         self.forwarded_task = -1 * np.ones((TASK_NUM, (2 + assumptions.TASK_SIZE * 3)))
         
@@ -62,6 +62,76 @@ class Server():
         reward = 0
         
         return self.state, reward
-        
+
     def update(self, msg):
-        pass
+        # Things and Terrain
+        observation_map = init_vision_grid(self.agent_vision)
+        things = msg['things']
+        terrain = msg['terrain']
+        # print(f"\n\n\nThings: {things}")
+        # print(f"Terrain: {terrain}")
+
+        for th in things:
+            x = th["x"]
+            y = th["y"]
+            detail = th["details"]
+            typ = th["type"]
+
+            ind = find_coord_index(observation_map, [x, y])
+
+            # print(f"Thing detail: {detail}")
+            # print(f"Map ind: {ind}")
+
+            observation_map[ind][2] = get_thing_num(typ)
+            observation_map[ind][3] = get_thing_num(detail)
+
+        terrain_values = ["goal", "obstacle"]
+
+        for name in terrain_values:
+            try:
+                terran_cords = terrain[name]
+                # print(f"Terrain cords: {terran_cords}")
+                for cords in terran_cords:
+                    x, y = cords
+                    ind = find_coord_index(observation_map, [x, y])
+                    observation_map[ind][4] = get_terrain_num[name]
+            except:
+                print(f"Terrain: {name} not found")
+
+
+        self.vision_grid = np.asarray(observation_map)
+
+
+
+        # Tasks
+        tasks = msg["tasks"]
+        preprocessed_tasks = []
+
+        for t in tasks:
+            # print("Requirements size: ", len(t["requirements"]))
+            # if len(t["requirements"]) > 1:
+            #    input()
+            points = t["reward"]
+            requirements = t["requirements"][0]  # TODO: Only using the first requirement
+            name = t["name"]  # TODO: Currently not used
+            deadline = t["deadline"]
+            details = requirements["details"]  # TODO: Find a use for this
+            x = requirements["x"]
+            y = requirements["y"]
+            block = requirements["type"]
+
+
+
+
+            # Convert block
+            block_num = get_thing_num(block)
+
+            preprocessed_tasks.append([
+                name, x, y, block_num, deadline, points
+            ])
+
+        print("Tasks: ", preprocessed_tasks)
+
+        self.state = np.asarray([self.vision_grid, self.agent_attached, self.forwarded_task, self.energy, self.step])
+
+        return self.state

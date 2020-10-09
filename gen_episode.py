@@ -1,8 +1,5 @@
-from server_env import *
-from message_classes import *
-from action_classes import *
+from server_env_new import *
 from random_agent import *
-import time
 
 """
 TODO: Check if requires change according to:
@@ -20,8 +17,8 @@ agent1.connect()
 
 assert agent1.init_agent() # auth-response
 print("YES")
-response = agent1.receive() # sim-start (vision, step)
-response = agent1.receive() # request-action
+response, _ = agent1.receive() # sim-start (vision, step)
+response, _ = agent1.receive() # request-action
 print("My first request-action")
 actions = []
 #step = 0
@@ -29,13 +26,13 @@ actions = []
 
 while response["type"] == "request-action":
     agent1.update_env(response)
-    action, ind = agent1.act()
-    actions.append(ind)
+    action_ind = agent1.act()
+    actions.append(action_ind)
     
-    state, reward, done, _ = env.step(ind)
+    #state, reward, done, _ = env.step(action_ind)
     
-    agent1.send(action)
-    response = agent1.receive()
+    agent1.send(action_ind)
+    response, reward = agent1.receive()  # We don't get reward for the last action :(
 
 
     # TODO: Only for testing

@@ -1,10 +1,8 @@
-import server_env
 import random, time
 import socket, json
 from message_classes import *
-from action_classes import *
 import numpy as np
-from server_env import find_ind_in_observation_np_array
+from utils import *
 
 directions = ["n", "s", "w", "e"]
 
@@ -17,16 +15,17 @@ class Random_Agent(object):
         self.mem = []
         self.state = None
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.map = np.array([[0,0,0,0]])
+        self.map = np.array([[0,0,0,0,0]])
 		
     def act(self):
         ind = random.randint(0, len(directions) - 1)
         high_level_thinking = directions[ind]
         action = ActionMove(high_level_thinking)
-
         self.update_map(high_level_thinking)
 
-        return action, ind
+        action_ind = high_level_thinking
+
+        return action_ind
 
     def update_map(self, direction):
         print("Direction: ", direction)
@@ -42,8 +41,8 @@ class Random_Agent(object):
 
     def update_env(self, msg):
         self.state = self.env.update(msg['content']['percept'])
-        observation_vector = self.state[3]
-        #print("Observation vector: ", observation_vector)
+        observation_vector = self.state[0]
+        print("Observation vector: ", observation_vector)
         for obs in observation_vector:
             ind = find_ind_in_observation_np_array(self.map, obs[:2])
             #print("Check: ", obs[:2])
@@ -68,20 +67,25 @@ class Random_Agent(object):
         print(rows, cols)
 
 
-        things_map = np.zeros((rows, cols)) - 1
+        things_type_map = np.zeros((rows, cols)) - 1
+        things_details_map = np.zeros((rows, cols)) - 1
         terrain_map = np.zeros((rows, cols)) - 1
 
         for value in self.map:
             x,y = value[:2]
             x = x + abs(minX)
             y = y + abs(minY)
-            things_map[y,x] = value[2]
-            terrain_map[y,x] = value[3]
+            things_type_map[y,x] = value[2]
+            things_details_map[y,x] = value[3]
+            terrain_map[y,x] = value[4]
 
-        print("Map shape: ", things_map.shape)
+        print("Map shape: ", things_type_map.shape)
 
-        print("Things map: ")
-        print(things_map)
+        print("Things type map: ")
+        print(things_type_map)
+
+        print("Things details map: ")
+        print(things_details_map)
 
         print("Terrain map: ")
         print(terrain_map)
@@ -109,8 +113,8 @@ class Random_Agent(object):
         #print(f"Response: {response}")
         return True if response["content"]["result"] == "ok" else False
 
-    def send(self, action):
-        agent_message = ActionReply(self.request_id, action)
+    def send(self, action: int):
+        agent_message = ActionReply(self.request_id, action_dict[action])
         msg = agent_message.msg()
         #print(f"Sending: {msg}")
         self.sock.sendall(msg.encode())
@@ -121,9 +125,12 @@ class Random_Agent(object):
             if recv != "":
                 break
         response = json.loads(recv.rstrip('\x00'))
+        reward = 0
         print("Response:", response)
         if response['type'] == "request-action":
             self.request_id = response['content']['id']
-            #self.update_env(response)
+            if response['content']['percept']['lastAction'] != '':
+                print("Not empty")
+                #TODONOW reward
         ##TODO Check request_action
-        return response
+        return response, reward

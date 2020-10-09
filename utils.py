@@ -1,3 +1,5 @@
+import itertools
+from action_classes import *
 
 action_dict = {
     0: ActionSkip()
@@ -8,8 +10,8 @@ things_dict = {
         'name': 'empty'
         },
     1:  {
-        'name': 'entity'
-        0: 'A'
+        'name': 'entity',
+        0: 'A',
         1: 'B'
         }
 }
@@ -19,6 +21,13 @@ terrain_dict = {
     1: 'goal',
     2: 'obstacle'
 }
+
+# TODO Replace 'Should work for deatils and type to' see server_env_new update function for reference and for Dispenser/Block
+def get_thing_num(name: str):
+    return 1 if name == "entity" else 2
+
+def get_terrain_num(name: str): # TODO Replace
+    return 1 if name == "goal" else 2
     
 
 def vision_grid_size(vision):
@@ -38,7 +47,7 @@ def init_vision_grid(vision):
     for v in range(-vision, vision + 1):
         re += itertools.product([v], list(range((-vision) + abs(v), (vision + 1) - abs(v))))
 
-    return [list(l) + [0,0] for l in re]
+    return [list(l) + [0,0,0] for l in re]
     
 def find_coord_index(array, val):
     ind = -1
