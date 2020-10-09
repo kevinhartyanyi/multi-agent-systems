@@ -1,7 +1,7 @@
 """
     ### State codes
         
-        ## -1 UNKOWON
+        ## -1 UNKNOWN
         
         ## Things
             0. - empty
@@ -54,17 +54,16 @@
             - x
             - y
             - things.type
-            - details
+            - things.details
             - terrain
         - known dispensers (DISPENSER_NUM x 3)
             - x
             - y
             - details
-        - attached (VISION_RANGE x VISION_RANGE x 3)
+        - attached (TASK_SIZE+2 x TASK_SIZE+2 x 3)
             for each:
             - x
             - y
-            - details
         - energy (0-MAX_ENERGY) # current energy level
         - step (0-STEP_NUM) # current step number
         - tasks (task_num x (2 + TASK_SIZE x 3)
@@ -98,25 +97,3 @@
         - disconnect (x1, y1, attachment1, x2, y2, attachment2)
         - clear
 """
-
-- skip
-		- move
-			- {n, s, e, w}
-		- attach
-			- {n, s, e, w}
-		- detach
-			- {n, s, e, w}
-		- rotate
-			- {cw, ccw}
-		- connect (!! connecting blocks does detach agents from those blocks!!)
-			- agent
-			- x/y
-		- disconnect
-			- x/y of attachment1
-			- x/y of attachment2
-		- request
-			- {n, s, e, w}
-		- submit
-			- task.name
-		- clear (obstacle -> normal terrain, blocks -> destroyed, entities -> disabled)
-			- x/y (target position of clearing, removes that block + 4 adjacent ones)
