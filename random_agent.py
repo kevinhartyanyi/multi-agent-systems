@@ -6,6 +6,7 @@ from utils import *
 
 directions = ["n", "s", "w", "e"]
 
+
 class Random_Agent(object):
     def __init__(self, name, id, env):
         self.name = name
@@ -15,69 +16,69 @@ class Random_Agent(object):
         self.mem = []
         self.state = None
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.map = np.array([[0,0,0,0,0]])
-		
+        self.map = np.array([[0, 0, 0, 0, 0]])
+
     def act(self):
         ind = random.randint(0, len(directions) - 1)
-        high_level_thinking = directions[ind]
-        action = ActionMove(high_level_thinking)
-        self.update_map(high_level_thinking)
 
-        action_ind = high_level_thinking
+        high_level_thinking = directions[ind]  # Prediction
+
+        ind += 1 # TODO: This is only temporary
+        if 1 <= ind <= 4: # Only need to update the map if we move
+            self.update_map(ind)
+
+        action_ind = ind
 
         return action_ind
 
-    def update_map(self, direction):
-        print("Direction: ", direction)
-        # TODO: Maybe switch the values???
-        if direction == "n":
+    def update_map(self, direction: int):
+        if direction == 1:
             self.map[:, 1] += 1
-        elif direction == "w":
-            self.map[:, 0] += 1
-        elif direction == "s":
+        elif direction == 2:
             self.map[:, 1] -= 1
-        elif direction == "e":
+        elif direction == 3:
             self.map[:, 0] -= 1
+        elif direction == 4:
+            self.map[:, 0] += 1
 
     def update_env(self, msg):
         self.state = self.env.update(msg['content']['percept'])
         observation_vector = self.state[0]
-        print("Observation vector: ", observation_vector)
+        #print("Observation vector: ", observation_vector)
         for obs in observation_vector:
             ind = find_ind_in_observation_np_array(self.map, obs[:2])
-            #print("Check: ", obs[:2])
-            #print("Index", ind)
-            if ind == -1: # New Entry
+            # print("Check: ", obs[:2])
+            # print("Index", ind)
+            if ind == -1:  # New Entry
                 self.map = np.append(self.map, np.array([obs]), axis=0)
-            else: # Update
+            else:  # Update
                 self.map[ind] = obs
-        self.visualize_map()
-        #return self.act(state)
+        #self.visualize_map()
+        # return self.act(state)
 
     def visualize_map(self):
-        minX = np.amin(self.map[:,0])
-        maxX = np.amax(self.map[:,0])
+        minX = np.amin(self.map[:, 0])
+        maxX = np.amax(self.map[:, 0])
 
-        minY = np.amin(self.map[:,1])
-        maxY = np.amax(self.map[:,1])
+        minY = np.amin(self.map[:, 1])
+        maxY = np.amax(self.map[:, 1])
 
         cols = abs(minX) + maxX + 1
         rows = abs(minY) + maxY + 1
 
         print(rows, cols)
 
-
         things_type_map = np.zeros((rows, cols)) - 1
         things_details_map = np.zeros((rows, cols)) - 1
         terrain_map = np.zeros((rows, cols)) - 1
 
         for value in self.map:
-            x,y = value[:2]
+            x, y = value[:2]
             x = x + abs(minX)
             y = y + abs(minY)
-            things_type_map[y,x] = value[2]
-            things_details_map[y,x] = value[3]
-            terrain_map[y,x] = value[4]
+            things_type_map[y, x] = value[2]
+            things_details_map[y, x] = value[3]
+            terrain_map[y, x] = value[4]
 
         print("Map shape: ", things_type_map.shape)
 
@@ -89,8 +90,6 @@ class Random_Agent(object):
 
         print("Terrain map: ")
         print(terrain_map)
-
-
 
     def connect(self, host: str = "127.0.0.1", port: int = 12300):
         connected = False
@@ -107,16 +106,16 @@ class Random_Agent(object):
     def init_agent(self):
         agent_message = AuthRequest(self.name, self.id)
         msg = agent_message.msg()
-        #print(f"Sending: {msg}")
+        # print(f"Sending: {msg}")
         self.sock.sendall(msg.encode())
         response = json.loads(self.sock.recv(4096).decode("ascii").rstrip('\x00'))
-        #print(f"Response: {response}")
+        # print(f"Response: {response}")
         return True if response["content"]["result"] == "ok" else False
 
     def send(self, action: int):
         agent_message = ActionReply(self.request_id, action_dict[action])
         msg = agent_message.msg()
-        #print(f"Sending: {msg}")
+        # print(f"Sending: {msg}")
         self.sock.sendall(msg.encode())
 
     def receive(self):
@@ -130,7 +129,6 @@ class Random_Agent(object):
         if response['type'] == "request-action":
             self.request_id = response['content']['id']
             if response['content']['percept']['lastAction'] != '':
-                print("Not empty")
-                #TODONOW reward
+                reward = calc_reward(response['content']['percept'])
         ##TODO Check request_action
         return response, reward

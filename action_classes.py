@@ -24,6 +24,9 @@ class ActionMove(Action):
         self.type = "move"
         self.param = [direction]
 
+    def print(self, reward):
+        print(f"\n\nCurrent action: \n\tMove: {self.param[0]} \t Reward: {reward}")
+
     def eval(self, state):
         reward = 0
         lastActionParams, lastAction, lastActionResult, map = state

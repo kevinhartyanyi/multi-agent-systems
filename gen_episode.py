@@ -34,6 +34,8 @@ while response["type"] == "request-action":
     agent1.send(action_ind)
     response, reward = agent1.receive()  # We don't get reward for the last action :(
 
+    action_dict[action_ind].print(reward)
+
 
     # TODO: Only for testing
     #time.sleep(10)

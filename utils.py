@@ -2,8 +2,30 @@ import itertools
 from action_classes import *
 
 action_dict = {
-    0: ActionSkip()
+    0: ActionSkip(),
+    1: ActionMove("n"),
+    2: ActionMove("s"),
+    3: ActionMove("e"),
+    4: ActionMove("w")
 }
+"""
+0. - skip
+1. - move[n]
+2. - move[s]
+3. - move[e]
+4. - move[w]
+5. - attach[n]
+6. - attach[s]
+7. - attach[e]
+8. - attach[w]
+9. - detach[n]
+10. - detach[s]
+11. - detach[e]
+12. - detach[w]
+13. - rotate[cw]
+14. - rotate[ccw]
+15. - submit[0-task_num]
+"""
 
 things_dict = {
     0:  {
@@ -57,3 +79,6 @@ def find_coord_index(array, val):
             ind = i
             break
     return ind
+
+def calc_reward(perception) -> int:
+    return 0

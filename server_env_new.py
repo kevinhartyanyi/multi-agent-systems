@@ -26,7 +26,7 @@ class Server():
         # Current perception
         self.vision_grid = -1 * np.ones((vision_grid_size(self.agent_vision), 5)) # Things, terrain
         self.agent_attached = np.zeros((vision_grid_size(assumptions.TASK_SIZE), 2)) # Attached -> Extract attached type from lastAction + lastActionParameter
-        self.forwarded_task_names = [''] * TASK_NUM # Names of the tracked tasks
+        self.forwarded_task_names = ["-1"] * TASK_NUM # Names of the tracked tasks
         self.forwarded_task = -1 * np.ones((TASK_NUM, (2 + assumptions.TASK_SIZE * 3)))
         
         self.energy = 0
@@ -94,7 +94,8 @@ class Server():
                 for cords in terran_cords:
                     x, y = cords
                     ind = find_coord_index(observation_map, [x, y])
-                    observation_map[ind][4] = get_terrain_num[name]
+                    observation_map[ind][4] = get_terrain_num(name)
+                    #print("Terrain cords: ", cords)
             except:
                 print(f"Terrain: {name} not found")
 
@@ -127,10 +128,37 @@ class Server():
             block_num = get_thing_num(block)
 
             preprocessed_tasks.append([
-                name, x, y, block_num, deadline, points
+                name, x, y, deadline, points, block_num
             ])
 
-        print("Tasks: ", preprocessed_tasks)
+        print("Preprocessed Tasks: \n", preprocessed_tasks)
+
+        # Check if stored task is still active
+        task_names = [t[0] for t in preprocessed_tasks]
+        for i, name in enumerate(self.forwarded_task_names):
+            if name not in task_names and name != "-1":  # Delete if task is over
+                self.forwarded_task[i] = -1 * np.ones(2 + assumptions.TASK_SIZE * 3)
+            elif name in task_names:  # Update otherwise
+                for t in preprocessed_tasks:
+                    if t[0] == name:
+                        self.forwarded_task[i] = np.asarray(t[1:])
+                        break
+
+
+        free_places = [i for i, n in enumerate(self.forwarded_task_names) if n == "-1"]
+        not_stored_yet = [i for i, n in enumerate(preprocessed_tasks) if n[0] not in self.forwarded_task_names]
+        while len(free_places) > 0 and len(not_stored_yet) > 0:
+            self.forwarded_task[free_places[0]] = np.asarray(preprocessed_tasks[not_stored_yet[0]][1:])
+
+            self.forwarded_task_names[free_places[0]] = preprocessed_tasks[not_stored_yet[0]][0]
+            free_places = [i for i, n in enumerate(self.forwarded_task_names) if n == "-1"]
+            not_stored_yet = [i for i, n in enumerate(preprocessed_tasks) if n[0] not in self.forwarded_task_names]
+
+        if True:
+            print("Task List")
+            for i in range(len(self.forwarded_task_names)):
+                print(f"Task name: {self.forwarded_task_names[i]} \t values: {self.forwarded_task[i]}")
+
 
         self.state = np.asarray([self.vision_grid, self.agent_attached, self.forwarded_task, self.energy, self.step])
 
