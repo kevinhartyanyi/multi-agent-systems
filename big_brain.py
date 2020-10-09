@@ -76,4 +76,47 @@
                 - details
 
     ### Actions
+        0. - skip
+        1. - move[n]
+        2. - move[s]
+        3. - move[e]
+        4. - move[w]
+        5. - attach[n]
+        6. - attach[s]
+        7. - attach[e]
+        8. - attach[w]
+        9. - detach[n]
+        10. - detach[s]
+        11. - detach[e]
+        12. - detach[w]
+        13. - rotate[cw]
+        14. - rotate[ccw]
+        15. - submit[0-task_num]
+        
+        # Currently not used actions
+        - connect (x, y, agent)
+        - disconnect (x1, y1, attachment1, x2, y2, attachment2)
+        - clear
 """
+
+- skip
+		- move
+			- {n, s, e, w}
+		- attach
+			- {n, s, e, w}
+		- detach
+			- {n, s, e, w}
+		- rotate
+			- {cw, ccw}
+		- connect (!! connecting blocks does detach agents from those blocks!!)
+			- agent
+			- x/y
+		- disconnect
+			- x/y of attachment1
+			- x/y of attachment2
+		- request
+			- {n, s, e, w}
+		- submit
+			- task.name
+		- clear (obstacle -> normal terrain, blocks -> destroyed, entities -> disabled)
+			- x/y (target position of clearing, removes that block + 4 adjacent ones)
