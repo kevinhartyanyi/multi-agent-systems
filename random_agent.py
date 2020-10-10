@@ -124,11 +124,8 @@ class Random_Agent(object):
             if recv != "":
                 break
         response = json.loads(recv.rstrip('\x00'))
-        reward = 0
         print("Response:", response)
         if response['type'] == "request-action":
             self.request_id = response['content']['id']
-            if response['content']['percept']['lastAction'] != '':
-                reward = calc_reward(response['content']['percept'])
         ##TODO Check request_action
-        return response, reward
+        return response

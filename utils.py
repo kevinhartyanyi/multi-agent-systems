@@ -80,5 +80,26 @@ def find_coord_index(array, val):
             break
     return ind
 
-def calc_reward(perception) -> int:
-    return 0
+def calc_reward(perception, task_names, tasks) -> int:
+    reward = 0
+    success = "success" == perception["lastActionResult"]
+    last_action = perception["lastAction"]
+    last_action_param = perception["lastActionParams"]
+    print(f"Last Action: {last_action}     Param: {last_action_param}")
+    if not success:
+        reward = -1
+    elif last_action == "submit":
+        ind = -1
+        for i, name in enumerate(task_names):
+            if name == last_action_param:
+                ind = i
+                break
+        else:
+            print("\n\n\nERROR: Didn't find index for submit (task name)\n\n\n")
+        reward = tasks[ind][3]
+    return reward
+
+"""{'lastActionParams': ['w'], 'score': 0, 'lastAction': 'move', 'things': [{'x': 0, 'y': 0, 'details': 'A', 
+'type': 'entity'}], 'attached': [], 'disabled': False, 'terrain': {'obstacle': [[3, 2], [2, 2], [1, 2], [0, 2], [-1, 
+2], [-2, 2], [-5, 0], [-3, 2], [1, -4], [0, -4], [-1, -4]]}, 'lastActionResult': 'success', 'tasks': [{'reward': 10, 
+'requirements': [{'x': 0, 'y': 1, 'details': '', 'type': 'b2'}], 'name': 'task11', 'deadline': 408}, """
