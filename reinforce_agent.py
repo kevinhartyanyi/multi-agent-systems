@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.autograd import Variable
+import assumptions
 
 directions = ["n", "s", "w", "e"]
 
@@ -20,7 +21,12 @@ class Reinforce_Agent(object):
         self.state = None
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.map = np.array([[0,0,0,0]])
-        self.last_action_parameter = []
+        #self.last_action_parameter = [] # Needed?
+        
+        # Network parameters
+        # self.state (vision_grid, agent_attached, forwarded_task, energy, step)
+        self.known_dispensers = -1 * np.ones((assumptions.DISPENSER_NUM, 3))
+        self.known_walls = -1 * np.ones((assumptions.WALL_NUM, 2))
         
     def act(self):
         state = torch.from_numpy(self.state).float().unsqueeze(0)

@@ -80,8 +80,8 @@ class Server():
             # print(f"Thing detail: {detail}")
             # print(f"Map ind: {ind}")
 
-            observation_map[ind][2] = get_thing_num(typ)
-            observation_map[ind][3] = get_thing_num(detail)
+            observation_map[ind][2] = get_things_code(typ)
+            observation_map[ind][3] = get_things_details(typ, detail)
 
         terrain_values = ["goal", "obstacle"]
 
@@ -92,7 +92,7 @@ class Server():
                 for cords in terran_cords:
                     x, y = cords
                     ind = find_coord_index(observation_map, [x, y])
-                    observation_map[ind][4] = get_terrain_num(name)
+                    observation_map[ind][4] = get_terrain_code(name)
                     #print("Terrain cords: ", cords)
             except:
                 print(f"Terrain: {name} not found")

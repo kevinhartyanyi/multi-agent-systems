@@ -73,6 +73,9 @@
                 - x
                 - y
                 - details
+        - known walls (WALL_NUM x 2)
+            - x
+            - y
 
     ### Actions
     0. - skip

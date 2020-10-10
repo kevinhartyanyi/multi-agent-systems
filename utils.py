@@ -53,7 +53,7 @@ for i in range(assumptions.TASK_NUM):
 19 -> 19+task_num. - submit[0-task_num]
 """
 
-things_dict = {
+_things_dict = {
     0:  {
         'name': 'empty'
         },
@@ -61,23 +61,76 @@ things_dict = {
         'name': 'entity',
         0: 'A',
         1: 'B'
+        },
+    2:  {
+        'name': 'block',
+        0: 'b0',
+        1: 'b1',
+        2: 'b2'
+        },
+    3:  {
+        'name': 'dispenser' # Duplicate 'block'?
+        },
+    4:  {
+        'name': 'marker',
+        0: 'clear',
+        1: 'ci',
+        2: 'cp'
         }
 }
 
+# _things_dict[type]{['code']/['details']}
+things_dict = {
+    'empty':    {
+                'code': 0
+                },
+    'entity':   {
+                'code': 1,
+                'details':
+                    {
+                    'A': 0,
+                    'B': 1
+                    }
+                },
+    'block':    {
+                'code': 2,
+                'details':
+                    {
+                    'b0': 0,
+                    'b1': 1,
+                    'b2': 2
+                    }
+                },
+    'dispenser':{
+                'code': 3 # Duplicate 'block'?
+                },
+    'marker':   {
+                'code': 4,
+                'details':
+                    {
+                    'clear': 0,
+                    'ci': 1,
+                    'cp': 2
+                    }
+                }
+}
+
 terrain_dict = {
-    0: 'empty',
-    1: 'goal',
-    2: 'obstacle'
+    'empty': 0,
+    'goal': 1,
+    'obstacle': 2
 }
 
 # TODO Replace 'Should work for deatils and type to' see server_env_new update function for reference and for Dispenser/Block
-def get_thing_num(name: str):
-    return 1 if name == "entity" else 2
+def get_things_code(name: str):
+    return things_dict[name]['code']
 
-def get_terrain_num(name: str): # TODO Replace
-    return 1 if name == "goal" else 2
+def get_things_details(name: str, detail: str):
+    return things_dict[name if name != 'dispenser' else 'block']['details'][detail]
     
-
+def get_terrain_code(name: str):
+    return terrain_dict[name]
+    
 def vision_grid_size(vision):
     """
     Calculates the maximum visible cell amount based on vision.
