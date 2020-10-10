@@ -75,22 +75,27 @@
                 - details
 
     ### Actions
-        0. - skip
-        1. - move[n]
-        2. - move[s]
-        3. - move[e]
-        4. - move[w]
-        5. - attach[n]
-        6. - attach[s]
-        7. - attach[e]
-        8. - attach[w]
-        9. - detach[n]
-        10. - detach[s]
-        11. - detach[e]
-        12. - detach[w]
-        13. - rotate[cw]
-        14. - rotate[ccw]
-        15. - submit[0-task_num]
+    0. - skip
+    1. - move[n]
+    2. - move[s]
+    3. - move[e]
+    4. - move[w]
+    5. - attach[n]
+    6. - attach[s]
+    7. - attach[e]
+    8. - attach[w]
+    9. - detach[n]
+    10. - detach[s]
+    11. - detach[e]
+    12. - detach[w]
+    13. - rotate[cw]
+    14. - rotate[ccw]
+    15. - request[n]
+    16. - request[s]
+    17. - request[e]
+    18. - request[w]
+    19 -> 19+task_num. - submit[0-task_num]
+
         
         # Currently not used actions
         - connect (x, y, agent)

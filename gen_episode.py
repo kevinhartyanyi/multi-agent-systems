@@ -30,6 +30,10 @@ while response["type"] == "request-action":
     actions.append(action_ind)
 
     # state, reward, done, _ = env.step(action_ind)
+    action_ind = 20  # TODO Remove
+
+    if isinstance(action_dict[action_ind], ActionSubmit):  # TODO Could be performance improved by using max_key in utils
+        action_dict[action_ind].init_task_name(env.forwarded_task_names)
 
     agent1.send(action_ind)
     response = agent1.receive()

@@ -1,13 +1,35 @@
 import itertools
 from action_classes import *
+import assumptions
 
 action_dict = {
     0: ActionSkip(),
     1: ActionMove("n"),
     2: ActionMove("s"),
     3: ActionMove("e"),
-    4: ActionMove("w")
+    4: ActionMove("w"),
+    5: ActionAttach("n"),
+    6: ActionAttach("s"),
+    7: ActionAttach("e"),
+    8: ActionAttach("w"),
+    9: ActionDetach("n"),
+    10: ActionDetach("s"),
+    11: ActionDetach("e"),
+    12: ActionDetach("w"),
+    13: ActionRotate("cw"),
+    14: ActionRotate("ccw"),
+    15: ActionRequest("n"),
+    16: ActionRequest("s"),
+    17: ActionRequest("e"),
+    18: ActionRequest("w")
 }
+# Add Submit actions
+max_key = max(action_dict.keys()) + 1
+for i in range(assumptions.TASK_NUM):
+    action_dict[max_key] = ActionSubmit(i)
+    max_key += 1
+
+
 """
 0. - skip
 1. - move[n]
@@ -24,7 +46,11 @@ action_dict = {
 12. - detach[w]
 13. - rotate[cw]
 14. - rotate[ccw]
-15. - submit[0-task_num]
+15. - request[n]
+16. - request[s]
+17. - request[e]
+18. - request[w]
+19 -> 19+task_num. - submit[0-task_num]
 """
 
 things_dict = {
@@ -85,8 +111,9 @@ def calc_reward(perception, task_names, tasks) -> int:
     success = "success" == perception["lastActionResult"]
     last_action = perception["lastAction"]
     last_action_param = perception["lastActionParams"]
-    print(f"Last Action: {last_action}     Param: {last_action_param}")
+    print(f"Calc Action: {last_action}     Param: {last_action_param}")
     if not success:
+        print("Reason to fail: ", perception["lastActionResult"])
         reward = -1
     elif last_action == "submit":
         ind = -1
@@ -98,8 +125,3 @@ def calc_reward(perception, task_names, tasks) -> int:
             print("\n\n\nERROR: Didn't find index for submit (task name)\n\n\n")
         reward = tasks[ind][3]
     return reward
-
-"""{'lastActionParams': ['w'], 'score': 0, 'lastAction': 'move', 'things': [{'x': 0, 'y': 0, 'details': 'A', 
-'type': 'entity'}], 'attached': [], 'disabled': False, 'terrain': {'obstacle': [[3, 2], [2, 2], [1, 2], [0, 2], [-1, 
-2], [-2, 2], [-5, 0], [-3, 2], [1, -4], [0, -4], [-1, -4]]}, 'lastActionResult': 'success', 'tasks': [{'reward': 10, 
-'requirements': [{'x': 0, 'y': 1, 'details': '', 'type': 'b2'}], 'name': 'task11', 'deadline': 408}, """
