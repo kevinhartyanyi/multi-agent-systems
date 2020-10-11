@@ -123,7 +123,7 @@ class Server():
 
 
             # Convert block
-            block_num = get_thing_num(block)
+            block_num = get_things_code("block")
 
             preprocessed_tasks.append([
                 name, x, y, deadline, points, block_num

@@ -88,7 +88,7 @@ things_dict = {
                 'code': 1,
                 'details':
                     {
-                    'A': 0,
+                    'A': 0, # Should we change this (avoid 0), so it's easier to see on the map?
                     'B': 1
                     }
                 },
@@ -96,7 +96,7 @@ things_dict = {
                 'code': 2,
                 'details':
                     {
-                    'b0': 0,
+                    'b0': 0, # Should we change this (avoid 0), so it's easier to see on the map?
                     'b1': 1,
                     'b2': 2
                     }
@@ -108,7 +108,7 @@ things_dict = {
                 'code': 4,
                 'details':
                     {
-                    'clear': 0,
+                    'clear': 0, # Should we change this (avoid 0), so it's easier to see on the map?
                     'ci': 1,
                     'cp': 2
                     }

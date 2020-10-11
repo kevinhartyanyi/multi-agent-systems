@@ -16,7 +16,8 @@ class Random_Agent(object):
         self.mem = []
         self.state = None
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.map = np.array([[0, 0, 0, 0, 0]])
+        self.map = np.array([[0, 0, 0, 0, 0]]) # x, y, thing type, thing detail, terrain
+        self.walls = 0.5 * np.ones((assumptions.WALL_NUM, 2))
 
     def act(self):
         ind = random.randint(0, len(directions) - 1)
@@ -25,21 +26,25 @@ class Random_Agent(object):
 
         ind += 1 # TODO: This is only temporary
         if 1 <= ind <= 4: # Only need to update the map if we move
-            self.update_map(ind)
+            self.update_cords(ind)
 
         action_ind = ind
 
         return action_ind
 
-    def update_map(self, direction: int):
+    def update_cords(self, direction: int):
         if direction == 1:
             self.map[:, 1] += 1
+            self.walls[:,1][self.walls[:,1] != 0.5] += 1
         elif direction == 2:
             self.map[:, 1] -= 1
+            self.walls[:,1][self.walls[:,1]  != 0.5] -= 1
         elif direction == 3:
             self.map[:, 0] -= 1
+            self.walls[:,0][self.walls[:,0] != 0.5] -= 1
         elif direction == 4:
             self.map[:, 0] += 1
+            self.walls[:,0][self.walls[:,0] != 0.5] += 1
 
     def update_env(self, msg):
         self.state = self.env.update(msg['content']['percept'])
@@ -53,7 +58,23 @@ class Random_Agent(object):
                 self.map = np.append(self.map, np.array([obs]), axis=0)
             else:  # Update
                 self.map[ind] = obs
-        #self.visualize_map()
+
+
+        new_walls = self.map[(self.map[:,2] == 0) & (self.map[:,3] == 0) & (self.map[:,4] == 2)][:,:2]
+
+        empty_wall = np.where(self.walls[:,0] == 0.5)[0]
+        new_walls_count = 0
+        while new_walls_count < len(new_walls) and 0 < len(empty_wall):
+            if new_walls[new_walls_count].tolist() not in self.walls.tolist():
+                self.walls[empty_wall[0]] = new_walls[new_walls_count]
+                empty_wall = empty_wall[1:]
+            new_walls_count += 1
+
+        self.visualize_map()
+        print("Current, wall\n",self.walls)
+
+        self.state = np.asarray([self.state, self.walls])
+
         # return self.act(state)
 
     def visualize_map(self):
