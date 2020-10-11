@@ -17,7 +17,7 @@ class Random_Agent(object):
         self.state = None
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.map = np.array([[0, 0, 0, 0, 0]]) # x, y, thing type, thing detail, terrain
-        self.walls = 0.5 * np.ones((assumptions.WALL_NUM, 2))
+        self.walls = assumptions.IGNORE * np.ones((assumptions.WALL_NUM, 2))
 
     def act(self):
         ind = random.randint(0, len(directions) - 1)
@@ -35,23 +35,23 @@ class Random_Agent(object):
     def update_cords(self, direction: int):
         if direction == 1:
             self.map[:, 1] += 1
-            self.walls[:,1][self.walls[:,1] != 0.5] += 1
+            self.walls[:,1][self.walls[:,1] != assumptions.IGNORE] += 1
         elif direction == 2:
             self.map[:, 1] -= 1
-            self.walls[:,1][self.walls[:,1]  != 0.5] -= 1
+            self.walls[:,1][self.walls[:,1]  != assumptions.IGNORE] -= 1
         elif direction == 3:
             self.map[:, 0] -= 1
-            self.walls[:,0][self.walls[:,0] != 0.5] -= 1
+            self.walls[:,0][self.walls[:,0] != assumptions.IGNORE] -= 1
         elif direction == 4:
             self.map[:, 0] += 1
-            self.walls[:,0][self.walls[:,0] != 0.5] += 1
+            self.walls[:,0][self.walls[:,0] != assumptions.IGNORE] += 1
 
     def update_env(self, msg):
         self.state = self.env.update(msg['content']['percept'])
         observation_vector = self.state[0]
         #print("Observation vector: ", observation_vector)
         for obs in observation_vector:
-            ind = find_ind_in_observation_np_array(self.map, obs[:2])
+            ind = find_coord_index(self.map, obs[:2])
             # print("Check: ", obs[:2])
             # print("Index", ind)
             if ind == -1:  # New Entry
@@ -62,7 +62,7 @@ class Random_Agent(object):
 
         new_walls = self.map[(self.map[:,2] == 0) & (self.map[:,3] == 0) & (self.map[:,4] == 2)][:,:2]
 
-        empty_wall = np.where(self.walls[:,0] == 0.5)[0]
+        empty_wall = np.where(self.walls[:,0] == assumptions.IGNORE)[0]
         new_walls_count = 0
         while new_walls_count < len(new_walls) and 0 < len(empty_wall):
             if new_walls[new_walls_count].tolist() not in self.walls.tolist():

@@ -1,4 +1,4 @@
-from server_env import find_ind_in_observation_np_array
+from server_env import find_ind_in_observation_np_array # Change to utils.find_coord_index REMOVE THIS
 
 
 class Action:

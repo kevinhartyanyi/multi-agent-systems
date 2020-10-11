@@ -20,41 +20,48 @@ class Reinforce_Agent(object):
         self.request_id = 0
         self.state = None
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.map = np.array([[0,0,0,0]])
+        self.map = np.array([[0, 0, 0, 0, 0]]) # x, y, thing type, thing detail, terrain
         #self.last_action_parameter = [] # Needed?
         
         # Network parameters
-        # self.state (vision_grid, agent_attached, forwarded_task, energy, step)
-        self.known_dispensers = -1 * np.ones((assumptions.DISPENSER_NUM, 3))
-        self.known_walls = -1 * np.ones((assumptions.WALL_NUM, 2))
+        # self.state (vision_grid, agent_attached, forwarded_task, energy)
+        self.step_num = np.array([0]) # Will certainly be updated, no need to set to assumptions.IGNORE
+        self.known_dispensers = assumptions.IGNORE * np.ones((assumptions.DISPENSER_NUM, 3))
+        self.known_walls = assumptions.IGNORE * np.ones((assumptions.WALL_NUM, 2))
         
     def act(self):
         state = torch.from_numpy(self.state).float().unsqueeze(0)
         probs = self.forward(Variable(state))
         highest_prob_action = np.random.choice(self.num_actions, p=np.squeeze(probs.detach().numpy()))
         log_prob = torch.log(probs.squeeze(0)[highest_prob_action])
+        
+        if 1 <= ind <= 4: # Only need to update the map if we move
+            self.update_cords(ind)
+        
         return highest_prob_action, log_prob
 
         return action, ind
         
-    def update_map(self, direction):
-        print("Direction: ", direction)
-        # TODO: Maybe switch the values???
-        if direction == "n":
+    def _update_coords(self, direction: int):
+        if direction == 1:
             self.map[:, 1] += 1
-        elif direction == "w":
-            self.map[:, 0] += 1
-        elif direction == "s":
+            self.walls[:,1][self.walls[:,1] != assumptions.IGNORE] += 1
+        elif direction == 2:
             self.map[:, 1] -= 1
-        elif direction == "e":
+            self.walls[:,1][self.walls[:,1]  != assumptions.IGNORE] -= 1
+        elif direction == 3:
             self.map[:, 0] -= 1
+            self.walls[:,0][self.walls[:,0] != assumptions.IGNORE] -= 1
+        elif direction == 4:
+            self.map[:, 0] += 1
+            self.walls[:,0][self.walls[:,0] != assumptions.IGNORE] += 1
             
     def update_env(self, msg):
         self.state = self.env.update(msg['content']['percept'])
-        observation_vector = self.state[3]
+        observation_vector = self.state[0]
         #print("Observation vector: ", observation_vector)
         for obs in observation_vector:
-            ind = find_ind_in_observation_np_array(self.map, obs[:2])
+            ind = find_coord_index(self.map, obs[:2])
             #print("Check: ", obs[:2])
             #print("Index", ind)
             if ind == -1: # New Entry
@@ -62,7 +69,6 @@ class Reinforce_Agent(object):
             else: # Update
                 self.map[ind] = obs
         self.visualize_map()
-        #return self.act(state)
         
     def visualize_map(self):
         minX = np.amin(self.map[:,0])
@@ -77,20 +83,25 @@ class Reinforce_Agent(object):
         print(rows, cols)
 
 
-        things_map = np.zeros((rows, cols)) - 1
+        things_type_map = np.zeros((rows, cols)) - 1
+        things_details_map = np.zeros((rows, cols)) - 1
         terrain_map = np.zeros((rows, cols)) - 1
 
         for value in self.map:
-            x,y = value[:2]
+            x, y = value[:2]
             x = x + abs(minX)
             y = y + abs(minY)
-            things_map[y,x] = value[2]
-            terrain_map[y,x] = value[3]
+            things_type_map[y, x] = value[2]
+            things_details_map[y, x] = value[3]
+            terrain_map[y, x] = value[4]
 
-        print("Map shape: ", things_map.shape)
+        print("Map shape: ", things_type_map.shape)
 
-        print("Things map: ")
-        print(things_map)
+        print("Things type map: ")
+        print(things_type_map)
+
+        print("Things details map: ")
+        print(things_details_map)
 
         print("Terrain map: ")
         print(terrain_map)
@@ -118,10 +129,10 @@ class Reinforce_Agent(object):
         #print(f"Response: {response}")
         return True if response["content"]["result"] == "ok" else False
 
-    def send(self, action):
-        agent_message = ActionReply(self.request_id, action)
+    def send(self, action: int):
+        agent_message = ActionReply(self.request_id, action_dict[action])
         msg = agent_message.msg()
-        #print(f"Sending: {msg}")
+        # print(f"Sending: {msg}")
         self.sock.sendall(msg.encode())
 
     def receive(self):

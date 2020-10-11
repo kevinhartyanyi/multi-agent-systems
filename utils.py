@@ -88,7 +88,7 @@ things_dict = {
                 'code': 1,
                 'details':
                     {
-                    'A': 0, # Should we change this (avoid 0), so it's easier to see on the map?
+                    'A': 0, # Should we change this (avoid 0), so it's easier to see on the map? A: If its justso we can see it better then I would say no, the network doesnt get the agent map as a parameter
                     'B': 1
                     }
                 },

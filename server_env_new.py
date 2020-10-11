@@ -22,13 +22,13 @@ class Server():
         #self.action_space = spaces.Discrete(4) # NOT INCLUSIVE ## TODO
 
         # Current perception
-        self.vision_grid = -1 * np.ones((vision_grid_size(self.agent_vision), 5)) # Things, terrain
+        self.vision_grid = assumptions.IGNORE * np.ones((vision_grid_size(self.agent_vision), 5)) # Things, terrain
         self.agent_attached = np.zeros((vision_grid_size(assumptions.TASK_SIZE), 2)) # Attached -> Extract attached type from lastAction + lastActionParameter
-        self.forwarded_task_names = ["-1"] * assumptions.TASK_NUM # Names of the tracked tasks
-        self.forwarded_task = -1 * np.ones((assumptions.TASK_NUM, (2 + assumptions.TASK_SIZE * 3))) # x, y, deadline, points, block_num
+        self.forwarded_task_names = [str(assumptions.IGNORE)] * assumptions.TASK_NUM # Names of the tracked tasks
+        self.forwarded_task = assumptions.IGNORE * np.ones((assumptions.TASK_NUM, (2 + assumptions.TASK_SIZE * 3))) # x, y, deadline, points, block_num
         
         self.energy = 0
-        self.step = 0
+        #self.step = 0 # Not in percept
         
         self.disabled = False
         self.lastActionResult = 'success'
@@ -68,6 +68,7 @@ class Server():
         terrain = msg['terrain']
         # print(f"\n\n\nThings: {things}")
         # print(f"Terrain: {terrain}")
+        self.energy = msg['energy']
 
         for th in things:
             x = th["x"]
@@ -118,6 +119,7 @@ class Server():
             x = requirements["x"]
             y = requirements["y"]
             block = requirements["type"]
+            
 
 
 
@@ -134,8 +136,8 @@ class Server():
         # Check if stored task is still active
         task_names = [t[0] for t in preprocessed_tasks]
         for i, name in enumerate(self.forwarded_task_names):
-            if name not in task_names and name != "-1":  # Delete if task is over
-                self.forwarded_task[i] = -1 * np.ones(2 + assumptions.TASK_SIZE * 3)
+            if name not in task_names and name != str(assumptions.IGNORE):  # Delete if task is over
+                self.forwarded_task[i] = assumptions.IGNORE * np.ones(2 + assumptions.TASK_SIZE * 3)
             elif name in task_names:  # Update otherwise
                 for t in preprocessed_tasks:
                     if t[0] == name:
@@ -143,13 +145,13 @@ class Server():
                         break
 
 
-        free_places = [i for i, n in enumerate(self.forwarded_task_names) if n == "-1"]
+        free_places = [i for i, n in enumerate(self.forwarded_task_names) if n == str(assumptions.IGNORE)]
         not_stored_yet = [i for i, n in enumerate(preprocessed_tasks) if n[0] not in self.forwarded_task_names]
         while len(free_places) > 0 and len(not_stored_yet) > 0:
             self.forwarded_task[free_places[0]] = np.asarray(preprocessed_tasks[not_stored_yet[0]][1:])
 
             self.forwarded_task_names[free_places[0]] = preprocessed_tasks[not_stored_yet[0]][0]
-            free_places = [i for i, n in enumerate(self.forwarded_task_names) if n == "-1"]
+            free_places = [i for i, n in enumerate(self.forwarded_task_names) if n == str(assumptions.IGNORE)]
             not_stored_yet = [i for i, n in enumerate(preprocessed_tasks) if n[0] not in self.forwarded_task_names]
 
         if True:
@@ -158,6 +160,6 @@ class Server():
                 print(f"Task name: {self.forwarded_task_names[i]} \t values: {self.forwarded_task[i]}")
 
 
-        self.state = np.asarray([self.vision_grid, self.agent_attached, self.forwarded_task, self.energy, self.step])
+        self.state = np.asarray([self.vision_grid, self.agent_attached, self.forwarded_task, self.energy])
 
         return self.state
