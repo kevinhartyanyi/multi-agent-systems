@@ -71,7 +71,8 @@ class Random_Agent(object):
             new_walls_count += 1
 
         self.visualize_map()
-        print("Current, wall\n",self.walls)
+        print("Current wall\n", self.walls)
+        print("Current attached\n", self.state[1])
 
         self.state = np.asarray([self.state, self.walls])
 

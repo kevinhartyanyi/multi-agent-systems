@@ -71,14 +71,16 @@ class Server():
         self.energy[0] = msg['energy']
         attached = msg['attached'] # List of coordinates
         
-        # Update agent_attached
-        attached = np.asarray(attached)
-        size_diff = self.agent_attached.shape[0] - attached.shape[0] 
-        if size_diff > 0:
-            self.agent_attached = np.vstack([attached, assumptions.IGNORE * np.ones((size_diff, 2)) ])
-        else:
-            self.agent_attached = attached[:self.agent_attached.shape[0], :] # Just a precaution, in case agent_attached isnt large enough
-
+        if len(attached) > 0:
+           
+            # Update agent_attached
+            attached = np.asarray(attached)
+            size_diff = self.agent_attached.shape[0] - attached.shape[0] 
+            if size_diff > 0:
+                self.agent_attached = np.vstack([attached, assumptions.IGNORE * np.ones((size_diff, 2)) ])
+            else:
+                self.agent_attached = attached[:self.agent_attached.shape[0], :] # Just a precaution, in case agent_attached isnt large enough
+         
         for th in things:
             x = th["x"]
             y = th["y"]
