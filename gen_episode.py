@@ -1,5 +1,6 @@
 from server_env_new import *
 from random_agent import *
+from reinforce_agent import *
 
 """
 TODO: Check if requires change according to:
@@ -10,7 +11,14 @@ https://stackoverflow.com/questions/45068568/how-to-create-a-new-gym-environment
 env = Server()
 
 agent_id = 1
-agent1 = Random_Agent("agentA1", agent_id, env)
+
+EXTRA_SMART = False # CHANGE AT OWN RISK
+agent1 = None
+
+if EXTRA_SMART:
+    agent1 = Reinforce_Agent("agentA1", agent_id, env)
+else:
+    agent1 = Random_Agent("agentA1", agent_id, env)
 
 state = env.reset()
 agent1.connect()
@@ -21,12 +29,18 @@ response = agent1.receive()  # sim-start (vision, step)
 response = agent1.receive()  # request-action
 print("My first request-action")
 actions = []
-# step = 0
-# max_step = 500
+rewards = []
+log_probs = []
 
 while response["type"] == "request-action":
     agent1.update_env(response)
-    action_ind = agent1.act()
+    
+    if EXTRA_SMART:
+        action_ind, log_prob = agent1.act()
+        print("ACTION:", action_ind)
+        log_probs.append(log_prob)
+    else:
+        action_ind = agent1.act()
     actions.append(action_ind)
 
     # state, reward, done, _ = env.step(action_ind)
@@ -39,7 +53,10 @@ while response["type"] == "request-action":
 
     if response["type"] == "request-action":  # We don't get reward for the last action :(
         reward = calc_reward(response['content']['percept'], env.forwarded_task_names, env.forwarded_task)
+        rewards.append(reward)
         action_dict[action_ind].print(reward)
+        if EXTRA_SMART:
+            agent1.update_net(rewards, log_probs)
 
     # TODO: Only for testing
     # time.sleep(10)

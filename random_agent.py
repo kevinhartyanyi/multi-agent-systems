@@ -19,6 +19,8 @@ class Random_Agent(object):
         self.map = np.array([[0, 0, 0, 0, 0]]) # x, y, thing type, thing detail, terrain
         self.walls = assumptions.IGNORE * np.ones((assumptions.WALL_NUM, 2))
         self.dispensers = assumptions.IGNORE * np.ones((assumptions.DISPENSER_NUM, 3))
+        self.max_energy = np.array([assumptions.MAX_ENERGY]) # Just for testing
+        self.step = np.array([0, assumptions.STEP_NUM])
 
     def act(self):
         ind = random.randint(0, len(action_dict) - 1)
@@ -87,14 +89,16 @@ class Random_Agent(object):
                 empty_dispensers = empty_dispensers[1:]
             new_dispensers_count += 1
         
-        self.state = np.asarray([self.state, self.walls, self.dispensers])
+        # Final state of state ;)
+        self.state = np.array([data for data in self.state] + [self.max_energy, self.step, self.walls, self.dispensers])
+        #self.state = np.asarray([self.state, self.walls, self.dispensers])
         print("State shape:", self.state.shape)
         
         # Visualization
         self.visualize_map()
         print("Current wall\n", self.walls)
         print("Current dispensers\n", self.dispensers)
-        print("Current attached\n", self.state[0][1])
+        print("Current attached\n", self.state[1])
         # return self.act(state)
 
     def visualize_map(self):

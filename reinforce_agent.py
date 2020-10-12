@@ -1,14 +1,13 @@
-import server_env
 import random, time
 import socket, json
+import numpy as np
 from message_classes import *
 from action_classes import *
-import numpy as np
-import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
-from torch.autograd import Variable
+from utils import *
 import assumptions
+from policy_network import *
+
+#pip install torch==1.6.0+cpu torchvision==0.7.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 
 directions = ["n", "s", "w", "e"]
 
@@ -30,18 +29,23 @@ class Reinforce_Agent(object):
         self.dispensers = assumptions.IGNORE * np.ones((assumptions.DISPENSER_NUM, 3))
         self.walls = assumptions.IGNORE * np.ones((assumptions.WALL_NUM, 2))
         
-    def act(self):
-        state = torch.from_numpy(self.state).float().unsqueeze(0)
-        probs = self.forward(Variable(state))
-        highest_prob_action = np.random.choice(self.num_actions, p=np.squeeze(probs.detach().numpy()))
-        log_prob = torch.log(probs.squeeze(0)[highest_prob_action])
+        # Policy Network
+        num_inputs = self.env.get_state_size() + self.max_energy.size + self.step.size + self.dispensers.size + self.walls.size
+        print("NUM_INPUTS:", num_inputs)
+        num_actions = len(action_dict)
+        hidden_size = int((2/3) * num_inputs + num_actions)
+        self.policy_network = PolicyNetwork(num_inputs, num_actions, hidden_size)
         
-        if 1 <= ind <= 4: # Only need to update the map if we move
-            self.update_cords(ind)
+    def act(self):
+        state = np.hstack([x.flatten() for x in self.state])
+        state += abs(np.amin(state))
+        
+        highest_prob_action, log_prob = self.policy_network.get_action(state)
+        
+        if 1 <= highest_prob_action <= 4: # Only need to update the map if we move
+            self._update_coords(highest_prob_action)
         
         return highest_prob_action, log_prob
-
-        return action, ind
         
     def _update_coords(self, direction: int):
         if direction == 1:
@@ -61,6 +65,9 @@ class Reinforce_Agent(object):
             self.walls[:,0][self.walls[:,0] != assumptions.IGNORE] += 1
             self.dispensers[:,0][self.dispensers[:,0] != assumptions.IGNORE] += 1
             
+    def update_net(self, rewards, log_probs):
+        update_policy(self.policy_network, rewards, log_probs)
+        
     def update_env(self, msg):
         self.state = self.env.update(msg['content']['percept'])
         observation_vector = self.state[0]
@@ -96,14 +103,15 @@ class Reinforce_Agent(object):
                 empty_dispensers = empty_dispensers[1:]
             new_dispensers_count += 1
 
-        self.state = np.asarray([self.state, self.walls, self.dispensers])
+        # Final state of state ;)
+        self.state = np.array([data for data in self.state] + [self.max_energy, self.step, self.walls, self.dispensers])
         print("State shape:", self.state.shape)
         
         # Visualization
-        self.visualize_map()
+        self._visualize_map()
         print("Current wall\n", self.walls)
         print("Current dispensers\n", self.dispensers)
-        print("Current attached\n", self.state[0][1])
+        print("Current attached\n", self.state[1])
         
     def _visualize_map(self):
         minX = np.amin(self.map[:,0])
@@ -185,53 +193,6 @@ class Reinforce_Agent(object):
         return response
          
 
-# Constants
-GAMMA = 0.9
-
-class PolicyNetwork(nn.Module):
-    def __init__(self, num_inputs, num_actions, hidden_size, learning_rate=3e-4):
-        super(PolicyNetwork, self).__init__()
-
-        self.num_actions = num_actions
-        self.linear1 = nn.Linear(num_inputs, hidden_size)
-        self.linear2 = nn.Linear(hidden_size, num_actions)
-        self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
-
-    def forward(self, state):
-        x = F.relu(self.linear1(state))
-        x = F.softmax(self.linear2(x), dim=1)
-        return x 
-    
-    def get_action(self, state):
-        state = torch.from_numpy(state).float().unsqueeze(0)
-        probs = self.forward(Variable(state))
-        highest_prob_action = np.random.choice(self.num_actions, p=np.squeeze(probs.detach().numpy()))
-        log_prob = torch.log(probs.squeeze(0)[highest_prob_action])
-        return highest_prob_action, log_prob
-        
-def update_policy(policy_network, rewards, log_probs):
-    discounted_rewards = []
-
-    for t in range(len(rewards)):
-        Gt = 0 
-        pw = 0
-        for r in rewards[t:]:
-            Gt = Gt + GAMMA**pw * r
-            pw = pw + 1
-        discounted_rewards.append(Gt)
-        
-    discounted_rewards = torch.tensor(discounted_rewards)
-    discounted_rewards = (discounted_rewards - discounted_rewards.mean()) / (discounted_rewards.std() + 1e-9) # normalize discounted rewards
-
-    policy_gradient = []
-    for log_prob, Gt in zip(log_probs, discounted_rewards):
-        policy_gradient.append(-log_prob * Gt)
-    
-    policy_network.optimizer.zero_grad()
-    policy_gradient = torch.stack(policy_gradient).sum()
-    policy_gradient.backward()
-    policy_network.optimizer.step()
-        
 """ Notes
 
 ## We assume that:

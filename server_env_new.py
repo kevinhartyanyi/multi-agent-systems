@@ -22,7 +22,7 @@ class Server():
         #self.action_space = spaces.Discrete(4) # NOT INCLUSIVE ## TODO
 
         # Current perception
-        self.vision_grid = assumptions.IGNORE * np.ones((vision_grid_size(self.agent_vision), 5)) # Things, terrain
+        self.vision_grid = assumptions.IGNORE * np.ones((vision_grid_size(self.agent_vision)+1, 5)) # Things, terrain
         self.agent_attached = assumptions.IGNORE * np.ones((vision_grid_size(assumptions.TASK_SIZE), 2)) # Attached -> Extract attached type from lastAction + lastActionParameter
         self.forwarded_task_names = [str(assumptions.IGNORE)] * assumptions.TASK_NUM # Names of the tracked tasks
         self.forwarded_task = assumptions.IGNORE * np.ones((assumptions.TASK_NUM, (2 + assumptions.TASK_SIZE * 3))) # x, y, deadline, points, block_num
@@ -34,11 +34,14 @@ class Server():
         self.lastActionResult = 'success'
         
 
-        self.state = None # Observation_space instance (vision_grid, agent_attached, forwarded_task, energy, step)
+        self.state = None # Observation_space instance (vision_grid, agent_attached, forwarded_task, energy)
         
     def reset(self):
         ## TODO Start server (subprocess)
         return None
+        
+    def get_state_size(self):
+        return self.vision_grid.size + self.agent_attached.size + self.forwarded_task.size + self.energy.size
         
     def get_task_name(self, index):
         return self.forwarded_task_names[index]
