@@ -21,11 +21,12 @@ class Random_Agent(object):
         self.dispensers = assumptions.IGNORE * np.ones((assumptions.DISPENSER_NUM, 3))
 
     def act(self):
-        ind = random.randint(0, len(directions) - 1)
+        ind = random.randint(0, len(action_dict) - 1)
 
-        high_level_thinking = directions[ind]  # Prediction
+        #high_level_thinking = directions[ind]  # Prediction
 
-        ind += 1 # TODO: This is only temporary
+        #ind += 1 # TODO: This is only temporary
+        
         if 1 <= ind <= 4: # Only need to update the map if we move
             self.update_cords(ind)
 
