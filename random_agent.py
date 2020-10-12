@@ -18,6 +18,7 @@ class Random_Agent(object):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.map = np.array([[0, 0, 0, 0, 0]]) # x, y, thing type, thing detail, terrain
         self.walls = assumptions.IGNORE * np.ones((assumptions.WALL_NUM, 2))
+        self.dispensers = assumptions.IGNORE * np.ones((assumptions.DISPENSER_NUM, 3))
 
     def act(self):
         ind = random.randint(0, len(directions) - 1)
@@ -36,15 +37,19 @@ class Random_Agent(object):
         if direction == 1:
             self.map[:, 1] += 1
             self.walls[:,1][self.walls[:,1] != assumptions.IGNORE] += 1
+            self.dispensers[:,1][self.dispensers[:,1] != assumptions.IGNORE] += 1
         elif direction == 2:
             self.map[:, 1] -= 1
             self.walls[:,1][self.walls[:,1]  != assumptions.IGNORE] -= 1
+            self.dispensers[:,1][self.dispensers[:,1]  != assumptions.IGNORE] -= 1
         elif direction == 3:
             self.map[:, 0] -= 1
             self.walls[:,0][self.walls[:,0] != assumptions.IGNORE] -= 1
+            self.dispensers[:,0][self.dispensers[:,0] != assumptions.IGNORE] -= 1
         elif direction == 4:
             self.map[:, 0] += 1
             self.walls[:,0][self.walls[:,0] != assumptions.IGNORE] += 1
+            self.dispensers[:,0][self.dispensers[:,0] != assumptions.IGNORE] += 1
 
     def update_env(self, msg):
         self.state = self.env.update(msg['content']['percept'])
@@ -59,7 +64,7 @@ class Random_Agent(object):
             else:  # Update
                 self.map[ind] = obs
 
-
+        # Update walls
         new_walls = self.map[(self.map[:,2] == 0) & (self.map[:,3] == 0) & (self.map[:,4] == 2)][:,:2]
 
         empty_wall = np.where(self.walls[:,0] == assumptions.IGNORE)[0]
@@ -70,12 +75,25 @@ class Random_Agent(object):
                 empty_wall = empty_wall[1:]
             new_walls_count += 1
 
+        # Update dispensers
+        new_dispensers = self.map[(self.map[:,2] == 3)][:,:4]
+        empty_dispensers = np.where(self.dispensers[:,0] == assumptions.IGNORE)[0]
+        new_dispensers_count = 0
+        while new_dispensers_count < len(new_dispensers) and 0 < len(empty_dispensers):
+            if new_dispensers[new_dispensers_count][:2].tolist() not in self.dispensers[:,:2].tolist():
+                self.dispensers[empty_dispensers[0]][:2] = new_dispensers[new_dispensers_count][:2]
+                self.dispensers[empty_dispensers[0]][2] = new_dispensers[new_dispensers_count][3]
+                empty_dispensers = empty_dispensers[1:]
+            new_dispensers_count += 1
+        
+        self.state = np.asarray([self.state, self.walls, self.dispensers])
+        print("State shape:", self.state.shape)
+        
+        # Visualization
         self.visualize_map()
         print("Current wall\n", self.walls)
-        print("Current attached\n", self.state[1])
-
-        self.state = np.asarray([self.state, self.walls])
-
+        print("Current dispensers\n", self.dispensers)
+        print("Current attached\n", self.state[0][1])
         # return self.act(state)
 
     def visualize_map(self):
