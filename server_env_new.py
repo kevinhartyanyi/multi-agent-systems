@@ -23,11 +23,11 @@ class Server():
 
         # Current perception
         self.vision_grid = assumptions.IGNORE * np.ones((vision_grid_size(self.agent_vision), 5)) # Things, terrain
-        self.agent_attached = np.zeros((vision_grid_size(assumptions.TASK_SIZE), 2)) # Attached -> Extract attached type from lastAction + lastActionParameter
+        self.agent_attached = assumptions.IGNORE * np.ones((vision_grid_size(assumptions.TASK_SIZE), 2)) # Attached -> Extract attached type from lastAction + lastActionParameter
         self.forwarded_task_names = [str(assumptions.IGNORE)] * assumptions.TASK_NUM # Names of the tracked tasks
         self.forwarded_task = assumptions.IGNORE * np.ones((assumptions.TASK_NUM, (2 + assumptions.TASK_SIZE * 3))) # x, y, deadline, points, block_num
         
-        self.energy = 0
+        self.energy = np.array([assumptions.IGNORE])
         #self.step = 0 # Not in percept
         
         self.disabled = False
@@ -68,7 +68,16 @@ class Server():
         terrain = msg['terrain']
         # print(f"\n\n\nThings: {things}")
         # print(f"Terrain: {terrain}")
-        self.energy = msg['energy']
+        self.energy[0] = msg['energy']
+        attached = msg['attached'] # List of coordinates
+        
+        # Update agent_attached
+        attached = np.asarray(attached)
+        size_diff = self.agent_attached.shape[0] - attached.shape[0] 
+        if size_diff > 0:
+            self.agent_attached = np.vstack([attached, assumptions.IGNORE * np.ones((size_diff, 2)) ])
+        else:
+            self.agent_attached = attached[:self.agent_attached.shape[0], :] # Just a precaution, in case agent_attached isnt large enough
 
         for th in things:
             x = th["x"]

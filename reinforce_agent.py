@@ -18,16 +18,17 @@ class Reinforce_Agent(object):
         self.id = id
         self.env = env
         self.request_id = 0
-        self.state = None
+        
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.map = np.array([[0, 0, 0, 0, 0]]) # x, y, thing type, thing detail, terrain
         #self.last_action_parameter = [] # Needed?
         
         # Network parameters
-        # self.state (vision_grid, agent_attached, forwarded_task, energy)
-        self.step_num = np.array([0]) # Will certainly be updated, no need to set to assumptions.IGNORE
-        self.known_dispensers = assumptions.IGNORE * np.ones((assumptions.DISPENSER_NUM, 3))
-        self.known_walls = assumptions.IGNORE * np.ones((assumptions.WALL_NUM, 2))
+        self.state = None #(vision_grid, agent_attached, forwarded_task, energy)
+        self.max_energy = np.array([assumptions.MAX_ENERGY])
+        self.step = np.array([0, assumptions.STEP_NUM]) # current step, assumptions.STEP_NUM (Will certainly be updated, no need to set to assumptions.IGNORE)
+        self.dispensers = assumptions.IGNORE * np.ones((assumptions.DISPENSER_NUM, 3))
+        self.walls = assumptions.IGNORE * np.ones((assumptions.WALL_NUM, 2))
         
     def act(self):
         state = torch.from_numpy(self.state).float().unsqueeze(0)
@@ -62,15 +63,30 @@ class Reinforce_Agent(object):
         #print("Observation vector: ", observation_vector)
         for obs in observation_vector:
             ind = find_coord_index(self.map, obs[:2])
-            #print("Check: ", obs[:2])
-            #print("Index", ind)
-            if ind == -1: # New Entry
+            # print("Check: ", obs[:2])
+            # print("Index", ind)
+            if ind == -1:  # New Entry
                 self.map = np.append(self.map, np.array([obs]), axis=0)
-            else: # Update
+            else:  # Update
                 self.map[ind] = obs
-        self.visualize_map()
+
+
+        new_walls = self.map[(self.map[:,2] == 0) & (self.map[:,3] == 0) & (self.map[:,4] == 2)][:,:2]
+
+        empty_wall = np.where(self.walls[:,0] == assumptions.IGNORE)[0]
+        new_walls_count = 0
+        while new_walls_count < len(new_walls) and 0 < len(empty_wall):
+            if new_walls[new_walls_count].tolist() not in self.walls.tolist():
+                self.walls[empty_wall[0]] = new_walls[new_walls_count]
+                empty_wall = empty_wall[1:]
+            new_walls_count += 1
+
+        self._visualize_map()
+        print("Current, wall\n",self.walls)
+
+        self.state = np.asarray([self.state, self.walls])
         
-    def visualize_map(self):
+    def _visualize_map(self):
         minX = np.amin(self.map[:,0])
         maxX = np.amax(self.map[:,0])
 
@@ -144,6 +160,7 @@ class Reinforce_Agent(object):
         #print(f"Response: {response}")
         if response['type'] == "request-action":
             self.request_id = response['content']['id']
+            self.step[0] = response['content']['step'] # Current step
             #self.update_env(response)
         ##TODO Check request_action
         return response
