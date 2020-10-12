@@ -156,7 +156,7 @@ class Random_Agent(object):
     def send(self, action: int):
         agent_message = ActionReply(self.request_id, action_dict[action])
         msg = agent_message.msg()
-        # print(f"Sending: {msg}")
+        print(f"Sending: {msg}")
         self.sock.sendall(msg.encode())
 
     def receive(self):

@@ -11,6 +11,7 @@ class ActionSkip(Action):
     def __init__(self):
         super(ActionSkip, self).__init__()
         self.type = "skip"
+        self.param = [""]
 
     def print(self, reward):
         print(f"\n\nCurrent action: \n\tSkip \t Reward: {reward}")

@@ -165,7 +165,7 @@ def calc_reward(perception, task_names, tasks) -> int:
     last_action = perception["lastAction"]
     last_action_param = perception["lastActionParams"]
     print(f"Calc Action: {last_action}     Param: {last_action_param}")
-    if not success:
+    if not success and last_action != "skip":
         print("Reason to fail: ", perception["lastActionResult"])
         reward = -1
     elif last_action == "submit":
