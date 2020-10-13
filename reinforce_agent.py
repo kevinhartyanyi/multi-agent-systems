@@ -24,13 +24,13 @@ class Reinforce_Agent(object):
         
         # Network parameters
         self.state = None #(vision_grid, agent_attached, forwarded_task, energy)
-        self.max_energy = np.array([assumptions.MAX_ENERGY])
+        #self.max_energy = np.array([assumptions.MAX_ENERGY])
         self.step = np.array([0, assumptions.STEP_NUM]) # current step, assumptions.STEP_NUM (Will certainly be updated, no need to set to assumptions.IGNORE)
         self.dispensers = assumptions.IGNORE * np.ones((assumptions.DISPENSER_NUM, 3))
         self.walls = assumptions.IGNORE * np.ones((assumptions.WALL_NUM, 2))
         
         # Policy Network
-        num_inputs = self.env.get_state_size() + self.max_energy.size + self.step.size + self.dispensers.size + self.walls.size
+        num_inputs = self.env.get_state_size() + self.step.size + self.dispensers.size + self.walls.size
         print("NUM_INPUTS:", num_inputs)
         num_actions = len(action_dict)
         hidden_size = int((2/3) * num_inputs + num_actions)
@@ -38,7 +38,7 @@ class Reinforce_Agent(object):
         
     def act(self):
         state = np.hstack([x.flatten() for x in self.state])
-        state += abs(np.amin(state))
+        #state += abs(np.amin(state))
         
         highest_prob_action, log_prob = self.policy_network.get_action(state)
         
@@ -65,8 +65,8 @@ class Reinforce_Agent(object):
             self.walls[:,0][self.walls[:,0] != assumptions.IGNORE] += 1
             self.dispensers[:,0][self.dispensers[:,0] != assumptions.IGNORE] += 1
             
-    def update_net(self, rewards, log_probs):
-        update_policy(self.policy_network, rewards, log_probs)
+    def update_net(self, rewards, log_probs, retain):
+        update_policy(self.policy_network, rewards, log_probs, retain)
         
     def update_env(self, msg):
         self.state = self.env.update(msg['content']['percept'])
@@ -104,14 +104,14 @@ class Reinforce_Agent(object):
             new_dispensers_count += 1
 
         # Final state of state ;)
-        self.state = np.array([data for data in self.state] + [self.max_energy, self.step, self.walls, self.dispensers])
+        self.state = np.array([data for data in self.state] + [self.step, self.walls, self.dispensers])
         print("State shape:", self.state.shape)
         
         # Visualization
-        self._visualize_map()
-        print("Current wall\n", self.walls)
-        print("Current dispensers\n", self.dispensers)
-        print("Current attached\n", self.state[1])
+        #self._visualize_map()
+        #print("Current wall\n", self.walls)
+        #print("Current dispensers\n", self.dispensers)
+        #print("Current attached\n", self.state[1])
         
     def _visualize_map(self):
         minX = np.amin(self.map[:,0])
@@ -187,7 +187,7 @@ class Reinforce_Agent(object):
         #print(f"Response: {response}")
         if response['type'] == "request-action":
             self.request_id = response['content']['id']
-            self.step[0] = response['content']['step'] # Current step
+            self.step[0] = response['content']['step'] # Current steps
             #self.update_env(response)
         ##TODO Check request_action
         return response

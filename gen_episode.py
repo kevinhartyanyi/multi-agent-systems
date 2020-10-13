@@ -12,7 +12,7 @@ env = Server()
 
 agent_id = 1
 
-EXTRA_SMART = False # CHANGE AT OWN RISK
+EXTRA_SMART = True # CHANGE AT OWN RISK
 agent1 = None
 
 if EXTRA_SMART:
@@ -31,8 +31,9 @@ print("My first request-action")
 actions = []
 rewards = []
 log_probs = []
-
+i = 0
 while response["type"] == "request-action":
+    i += 1
     agent1.update_env(response)
     
     if EXTRA_SMART:
@@ -55,11 +56,15 @@ while response["type"] == "request-action":
         reward = calc_reward(response['content']['percept'], env.forwarded_task_names, env.forwarded_task)
         rewards.append(reward)
         action_dict[action_ind].print(reward)
-        if EXTRA_SMART:
-            agent1.update_net(rewards, log_probs)
+        if EXTRA_SMART and i%4==0:
+            agent1.update_net(rewards, log_probs, i > 4)
+    
+        
 
     # TODO: Only for testing
     # time.sleep(10)
     input()
+
+
 
 print(actions)
