@@ -46,6 +46,11 @@ class Reinforce_Agent(object):
             self._update_coords(highest_prob_action)
         
         return highest_prob_action, log_prob
+
+    def get_state(self):
+        state = np.hstack([x.flatten() for x in self.state] + [0.5 for i in range(14)]).reshape((25,24))
+        print("State shape: ", state.shape)
+        return state
         
     def _update_coords(self, direction: int):
         if direction == 1:
