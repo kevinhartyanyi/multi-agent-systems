@@ -5,12 +5,12 @@ from dqn_network import *
 from subprocess import Popen, PIPE
 import matplotlib.pyplot as plt
 
-def plot_rewards(rewards, num_episodes):
+def plot_rewards(rewards, name):
     plt.plot(rewards)
     plt.title('Training Avg Rewards')
     plt.xlabel('Episode number')
     plt.ylabel('Average Reward')
-    plt.savefig(f"Rewards_{num_episodes}.png")
+    plt.savefig(f"Rewards_{name}.png")
 
 BATCH_SIZE = 5
 GAMMA = 0.999
@@ -96,7 +96,7 @@ def optimize_model():
 
 
 env = Server()
-num_episodes = 10
+num_episodes = 1
 
 agent_id = 1
 
@@ -204,7 +204,7 @@ for i_episode in range(num_episodes):
     agent1.reset()
 
 print('Complete')
-plot_rewards(episode_rewards, num_episodes)
+plot_rewards(episode_rewards, "best")
 
 torch.save(policy_net.state_dict(), f"policy_net_best.pth")
 torch.save(target_net.state_dict(), f"target_net_best.pth")
