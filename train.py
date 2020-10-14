@@ -2,6 +2,8 @@ from server_env_new import *
 from random_agent import *
 from reinforce_agent import *
 from dqn_network import *
+from subprocess import Popen, PIPE
+import matplotlib.pyplot as plt
 
 BATCH_SIZE = 5
 GAMMA = 0.999
@@ -14,6 +16,8 @@ n_actions = len(action_dict)
 
 policy_net = DQN(25, 24, n_actions).to(device).to(float)
 target_net = DQN(25, 24, n_actions).to(device).to(float)
+
+policy_net.load_state_dict(torch.load("policy_net_best.pth"))
 target_net.load_state_dict(policy_net.state_dict())
 target_net.eval()
 
@@ -37,7 +41,7 @@ def select_action(state):
     else:
         return torch.tensor([[random.randrange(n_actions)]], device=device, dtype=torch.long)
 
-episode_durations = []
+episode_rewards = []
 
 def optimize_model():
     if len(memory) < BATCH_SIZE:
@@ -85,7 +89,7 @@ def optimize_model():
 
 
 env = Server()
-num_episodes = 1
+num_episodes = 10
 
 agent_id = 1
 
@@ -98,27 +102,41 @@ else:
     agent1 = Random_Agent("agentA1", agent_id, env)
 
 
+monitor = False
 
 for i_episode in range(num_episodes):
     # Initialize the environment and state
     state = env.reset()
+
+    # Start server
+    if monitor:
+        process = Popen(
+            ["java", "-jar", "massim-2019-2.0/server/server-2019-2.1-jar-with-dependencies.jar", "--monitor", "8000",
+             "-conf", "massim-2019-2.0/server/conf/SampleConfig-Deliverable1.json"],
+            stdout=PIPE, stderr=PIPE, stdin=PIPE)
+    else:
+        process = Popen(
+            ["java", "-jar", "massim-2019-2.0/server/server-2019-2.1-jar-with-dependencies.jar",
+             "-conf", "massim-2019-2.0/server/conf/SampleConfig-Deliverable1.json"],
+            stdout=PIPE, stderr=PIPE, stdin=PIPE)
+
+    time.sleep(5)
     agent1.connect()
     assert agent1.init_agent()  # auth-response
     print("YES")
+    time.sleep(2)
+    process.stdin.write(b'\n')
+    process.stdin.flush()
+
     response = agent1.receive()  # sim-start (vision, step)
     response = agent1.receive()  # request-action
     print("My first request-action")
 
     agent1.update_env(response)
     state = torch.from_numpy(agent1.get_state()).unsqueeze(0).unsqueeze(0)
-    state = state.double()
-    print(state)
-    print(state.shape)
-    print(type(state))
-    double_x = state.double()
-    print(double_x)
+    #xstate = state.double()
 
-    print(type(double_x))
+    collect_rewards = []
 
     for t in count():
         # Select and perform an action
@@ -142,11 +160,14 @@ for i_episode in range(num_episodes):
 
         # Observe new state
         if not done:
-            reward = torch.tensor([[calc_reward(response['content']['percept'], env.forwarded_task_names, env.forwarded_task)]])
+            rew = calc_reward(response['content']['percept'], env.forwarded_task_names, env.forwarded_task)
+            collect_rewards.append(rew)
+            reward = torch.tensor([[rew]])
 
             agent1.update_env(response)
             next_state = torch.from_numpy(agent1.get_state()).type(torch.DoubleTensor).unsqueeze(0).unsqueeze(0)
         else:
+            collect_rewards.append(0)
             reward = torch.tensor([[0]])
             next_state = None
 
@@ -159,12 +180,27 @@ for i_episode in range(num_episodes):
         # Perform one step of the optimization (on the target network)
         optimize_model()
         if done:
-            episode_durations.append(t + 1)
+            episode_rewards.append(np.average(collect_rewards))
             break
 
     # Update the target network, copying all weights and biases in DQN
     if i_episode % TARGET_UPDATE == 0:
         target_net.load_state_dict(policy_net.state_dict())
+        print("Target Update")
+
+    if i_episode % 10:
+        torch.save(policy_net.state_dict(), f"policy_net_{i_episode}.pth")
+        torch.save(target_net.state_dict(), f"target_net_{i_episode}.pth")
+
+    process.kill()
+    agent1.reset()
 
 print('Complete')
+plt.plot(episode_rewards)
+plt.title('Training Avg Rewards')
+plt.xlabel('Episode number')
+plt.ylabel('Average Reward')
+plt.savefig(f"Rewards_{num_episodes}.png")
 
+torch.save(policy_net.state_dict(), f"policy_net_best.pth")
+torch.save(target_net.state_dict(), f"target_net_best.pth")

@@ -47,6 +47,21 @@ class Reinforce_Agent(object):
         
         return highest_prob_action, log_prob
 
+    def reset(self):
+        self.request_id = 0
+
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.map = np.array([[0, 0, 0, 0, 0]])  # x, y, thing type, thing detail, terrain
+        # self.last_action_parameter = [] # Needed?
+
+        # Network parameters
+        self.state = None  # (vision_grid, agent_attached, forwarded_task, energy)
+        # self.max_energy = np.array([assumptions.MAX_ENERGY])
+        self.step = np.array([0,
+                              assumptions.STEP_NUM])  # current step, assumptions.STEP_NUM (Will certainly be updated, no need to set to assumptions.IGNORE)
+        self.dispensers = assumptions.IGNORE * np.ones((assumptions.DISPENSER_NUM, 3))
+        self.walls = assumptions.IGNORE * np.ones((assumptions.WALL_NUM, 2))
+
     def get_state(self):
         state = np.hstack([x.flatten() for x in self.state] + [0.5 for i in range(14)]).reshape((25,24))
         print("State shape: ", state.shape)
@@ -157,6 +172,7 @@ class Reinforce_Agent(object):
 
 
     def connect(self, host: str = "127.0.0.1", port: int = 12300):
+
         connected = False
         wait_sec = 2
         while not connected:
@@ -164,7 +180,7 @@ class Reinforce_Agent(object):
                 self.sock.connect((host, port))
             except ConnectionRefusedError:
                 print(f"Connection Refused. Trying again after {wait_sec} seconds")
-                time.sleep(wait_sec)
+                time.sleep(0.1)
             else:
                 connected = True
 

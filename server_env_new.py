@@ -37,8 +37,7 @@ class Server():
         self.state = None # Observation_space instance (vision_grid, agent_attached, forwarded_task, energy)
         
     def reset(self):
-        ## TODO Start server (subprocess)
-        return None
+        self.__init__()
         
     def get_state_size(self):
         return self.vision_grid.size + self.agent_attached.size + self.forwarded_task.size + self.energy.size
