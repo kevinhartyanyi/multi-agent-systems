@@ -12,6 +12,15 @@ def plot_rewards(rewards, name):
     plt.ylabel('Average Reward')
     plt.savefig(f"Rewards_{name}.png")
 
+def plot_actions(actions, name):
+    fig, ax = plt.subplots(figsize=(20,10))
+    n, bins, patches = ax.hist(actions, len(action_dict))
+    ax.set_xlabel('Actions')
+    ax.set_ylabel('Number of times chosen by the agent')
+    ax.set_title('Actions Histogram')
+    ax.set_xticks(actions)
+    plt.savefig(f"Actions_histogram_{name}.png")
+
 BATCH_SIZE = 5
 GAMMA = 0.999
 EPS_START = 0.9
@@ -49,6 +58,7 @@ def select_action(state):
         return torch.tensor([[random.randrange(n_actions)]], device=device, dtype=torch.long)
 
 episode_rewards = []
+selected_actions = []
 
 def optimize_model():
     if len(memory) < BATCH_SIZE:
@@ -112,6 +122,7 @@ else:
 monitor = False
 
 for i_episode in range(num_episodes):
+    print("Episode: ", i_episode)
     # Initialize the environment and state
     state = env.reset()
 
@@ -151,6 +162,8 @@ for i_episode in range(num_episodes):
 
         action = select_action(state)
         print("Selected action: ", action)
+
+        selected_actions.append(action.item())
         if isinstance(action_dict[action.item()],
             ActionSubmit):  # TODO Could be performance improved by using max_key in utils
             action_dict[action.item()].init_task_name(env.forwarded_task_names)
@@ -199,12 +212,14 @@ for i_episode in range(num_episodes):
         torch.save(policy_net.state_dict(), f"policy_net_{i_episode}.pth")
         torch.save(target_net.state_dict(), f"target_net_{i_episode}.pth")
         plot_rewards(episode_rewards, num_episodes)
+        plot_actions(selected_actions, num_episodes)
 
     process.kill()
     agent1.reset()
 
 print('Complete')
 plot_rewards(episode_rewards, "best")
+plot_actions(selected_actions, "best")
 
 torch.save(policy_net.state_dict(), f"policy_net_best.pth")
 torch.save(target_net.state_dict(), f"target_net_best.pth")
