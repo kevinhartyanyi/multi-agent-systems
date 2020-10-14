@@ -3,7 +3,7 @@ from random_agent import *
 from reinforce_agent import *
 from dqn_network import *
 
-BATCH_SIZE = 128
+BATCH_SIZE = 5
 GAMMA = 0.999
 EPS_START = 0.9
 EPS_END = 0.05
@@ -12,8 +12,8 @@ TARGET_UPDATE = 10
 
 n_actions = len(action_dict)
 
-policy_net = DQN(25, 24, n_actions).to(device)
-target_net = DQN(25, 24, n_actions).to(device)
+policy_net = DQN(25, 24, n_actions).to(device).to(float)
+target_net = DQN(25, 24, n_actions).to(device).to(float)
 target_net.load_state_dict(policy_net.state_dict())
 target_net.eval()
 
@@ -28,7 +28,7 @@ def select_action(state):
     eps_threshold = EPS_END + (EPS_START - EPS_END) * \
         math.exp(-1. * steps_done / EPS_DECAY)
     steps_done += 1
-    if sample > eps_threshold or True:
+    if sample > eps_threshold:
         with torch.no_grad():
             # t.max(1) will return largest column value of each row.
             # second column on max result is index of where max element was
@@ -68,7 +68,7 @@ def optimize_model():
     # on the "older" target_net; selecting their best reward with max(1)[0].
     # This is merged based on the mask, such that we'll have either the expected
     # state value or 0 in case the state was final.
-    next_state_values = torch.zeros(BATCH_SIZE, device=device)
+    next_state_values = torch.zeros(BATCH_SIZE, device=device).to(float)
     next_state_values[non_final_mask] = target_net(non_final_next_states).max(1)[0].detach()
     # Compute the expected Q values
     expected_state_action_values = (next_state_values * GAMMA) + reward_batch
@@ -142,12 +142,12 @@ for i_episode in range(num_episodes):
 
         # Observe new state
         if not done:
-            reward = calc_reward(response['content']['percept'], env.forwarded_task_names, env.forwarded_task)
+            reward = torch.tensor([[calc_reward(response['content']['percept'], env.forwarded_task_names, env.forwarded_task)]])
 
             agent1.update_env(response)
             next_state = torch.from_numpy(agent1.get_state()).type(torch.DoubleTensor).unsqueeze(0).unsqueeze(0)
         else:
-            reward = 0
+            reward = torch.tensor([[0]])
             next_state = None
 
         # Store the transition in memory
@@ -162,7 +162,6 @@ for i_episode in range(num_episodes):
             episode_durations.append(t + 1)
             break
 
-        input()
     # Update the target network, copying all weights and biases in DQN
     if i_episode % TARGET_UPDATE == 0:
         target_net.load_state_dict(policy_net.state_dict())
