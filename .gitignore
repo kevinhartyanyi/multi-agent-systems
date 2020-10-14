@@ -1,6 +1,8 @@
 massim-2019-2.0/server/replays/
 
 *.pth
+*.png
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

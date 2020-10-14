@@ -5,6 +5,13 @@ from dqn_network import *
 from subprocess import Popen, PIPE
 import matplotlib.pyplot as plt
 
+def plot_rewards(rewards, num_episodes):
+    plt.plot(rewards)
+    plt.title('Training Avg Rewards')
+    plt.xlabel('Episode number')
+    plt.ylabel('Average Reward')
+    plt.savefig(f"Rewards_{num_episodes}.png")
+
 BATCH_SIZE = 5
 GAMMA = 0.999
 EPS_START = 0.9
@@ -191,16 +198,13 @@ for i_episode in range(num_episodes):
     if i_episode % 10:
         torch.save(policy_net.state_dict(), f"policy_net_{i_episode}.pth")
         torch.save(target_net.state_dict(), f"target_net_{i_episode}.pth")
+        plot_rewards(episode_rewards, num_episodes)
 
     process.kill()
     agent1.reset()
 
 print('Complete')
-plt.plot(episode_rewards)
-plt.title('Training Avg Rewards')
-plt.xlabel('Episode number')
-plt.ylabel('Average Reward')
-plt.savefig(f"Rewards_{num_episodes}.png")
+plot_rewards(episode_rewards, num_episodes)
 
 torch.save(policy_net.state_dict(), f"policy_net_best.pth")
 torch.save(target_net.state_dict(), f"target_net_best.pth")
