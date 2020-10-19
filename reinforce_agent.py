@@ -64,7 +64,7 @@ class Reinforce_Agent(object):
 
     def get_state(self):
         state = np.hstack([x.flatten() for x in self.state] + [0.5 for i in range(14)]).reshape((25,24))
-        print("State shape: ", state.shape)
+        #print("State shape: ", state.shape)
         return state
         
     def _update_coords(self, direction: int):
@@ -125,7 +125,7 @@ class Reinforce_Agent(object):
 
         # Final state of state ;)
         self.state = np.array([data for data in self.state] + [self.step, self.walls, self.dispensers])
-        print("State shape:", self.state.shape)
+        #print("State shape:", self.state.shape)
         
         # Visualization
         #self._visualize_map()
@@ -205,7 +205,7 @@ class Reinforce_Agent(object):
             if recv != "":
                 break
         response = json.loads(recv.rstrip('\x00'))
-        #print(f"Response: {response}")
+        print(f"Response: {response}")
         if response['type'] == "request-action":
             self.request_id = response['content']['id']
             self.step[0] = response['content']['step'] # Current steps

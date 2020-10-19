@@ -109,7 +109,8 @@ class Server():
                     observation_map[ind][4] = get_terrain_code(name)
                     #print("Terrain cords: ", cords)
             except:
-                print(f"Terrain: {name} not found")
+                #print(f"Terrain: {name} not found")
+                pass
 
 
         self.vision_grid = np.asarray(observation_map)
@@ -138,13 +139,13 @@ class Server():
 
 
             # Convert block
-            block_num = get_things_code("block")
+            block_num = get_things_details("block", block)
 
             preprocessed_tasks.append([
                 name, x, y, deadline, points, block_num
             ])
 
-        print("Preprocessed Tasks: \n", preprocessed_tasks)
+        #print("Preprocessed Tasks: \n", preprocessed_tasks)
 
         # Check if stored task is still active
         task_names = [t[0] for t in preprocessed_tasks]

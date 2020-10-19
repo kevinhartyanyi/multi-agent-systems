@@ -164,17 +164,26 @@ def calc_reward(perception, task_names, tasks) -> int:
     success = "success" == perception["lastActionResult"]
     last_action = perception["lastAction"]
     last_action_param = perception["lastActionParams"]
-    print(f"Calc Action: {last_action}     Param: {last_action_param}")
-    if not success and last_action != "skip":
-        print("Reason to fail: ", perception["lastActionResult"])
-        reward = -1
+    #print(f"Calc Action: {last_action}     Param: {last_action_param}")
+    if last_action == "attach" and success:
+        reward = 1
     elif last_action == "submit":
         ind = -1
-        for i, name in enumerate(task_names):
-            if name == last_action_param:
-                ind = i
-                break
+        if success:
+            for i, name in enumerate(task_names):
+                print(name, last_action_param[0])
+                if name == last_action_param[0]:
+                    ind = i
+                    print("Found")
+                    break
+            else:
+                print("\n\n\nERROR: Didn't find index for submit (task name)\n\n\n")
+            reward = tasks[ind][3]
+        elif "goal" in perception["terrain"].keys() and [0,0] in perception["terrain"]["goal"]:
+            reward = 1
         else:
-            print("\n\n\nERROR: Didn't find index for submit (task name)\n\n\n")
-        reward = tasks[ind][3]
+            reward = -1
+    elif not success:
+        #print("Reason to fail: ", perception["lastActionResult"])
+        reward = -1
     return reward

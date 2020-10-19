@@ -6,20 +6,47 @@ from subprocess import Popen, PIPE
 import matplotlib.pyplot as plt
 
 def plot_rewards(rewards, name):
+    plt.clf()
     plt.plot(rewards)
     plt.title('Training Avg Rewards')
     plt.xlabel('Episode number')
     plt.ylabel('Average Reward')
-    plt.savefig(f"Rewards_{name}.png")
+    plt.savefig(f"plots/Rewards_reward2_{name}.png")
 
 def plot_actions(actions, name):
+    plt.clf()
     fig, ax = plt.subplots(figsize=(20,10))
     n, bins, patches = ax.hist(actions, len(action_dict))
     ax.set_xlabel('Actions')
     ax.set_ylabel('Number of times chosen by the agent')
     ax.set_title('Actions Histogram')
     ax.set_xticks(actions)
-    plt.savefig(f"Actions_histogram_{name}.png")
+    plt.savefig(f"plots/Actions_histogram_reward2_{name}.png")
+
+def plot_double_action(actions, name):
+
+    failed = [len(list(filter(lambda y: y < 0, v))) for k, v in actions.items()]
+    correct = [len(list(filter(lambda y: y >= 0, v))) for k, v in actions.items()]
+
+
+    plt.clf()
+    fig, ax = plt.subplots(figsize=(20, 10))
+    #n, bins, patches = ax.hist([failed, correct], list(range(len(action_dict))), density=True, histtype='bar', stacked=True)
+
+    N = len(action_dict)
+    ind = np.arange(N)  # the x locations for the groups
+    width = 0.35  # the width of the bars: can also be len(x) sequence
+
+    p1 = plt.bar(ind, correct, width)
+    p2 = plt.bar(ind, failed, width)
+
+    ax.set_xlabel('Actions')
+    ax.set_ylabel('Number of times chosen by the agent')
+    ax.set_title('Actions Histogram')
+    ax.set_xticks(list(range(len(action_dict))))
+    plt.legend((p1[0], p2[0]), ('Correct', 'Failed'))
+    #plt.show()
+    plt.savefig(f"plots/Actions_histogram_reward_{name}.png")
 
 BATCH_SIZE = 5
 GAMMA = 0.999
@@ -59,6 +86,9 @@ def select_action(state):
 
 episode_rewards = []
 selected_actions = []
+selected_action_dict = {}
+for act in action_dict.keys():
+    selected_action_dict[act] = []
 
 def optimize_model():
     if len(memory) < BATCH_SIZE:
@@ -106,7 +136,7 @@ def optimize_model():
 
 
 env = Server()
-num_episodes = 1
+num_episodes = 100
 
 agent_id = 1
 
@@ -119,7 +149,7 @@ else:
     agent1 = Random_Agent("agentA1", agent_id, env)
 
 
-monitor = False
+monitor = True
 
 for i_episode in range(num_episodes):
     print("Episode: ", i_episode)
@@ -141,14 +171,14 @@ for i_episode in range(num_episodes):
     time.sleep(5)
     agent1.connect()
     assert agent1.init_agent()  # auth-response
-    print("YES")
+    #print("YES")
     time.sleep(2)
     process.stdin.write(b'\n')
     process.stdin.flush()
 
     response = agent1.receive()  # sim-start (vision, step)
     response = agent1.receive()  # request-action
-    print("My first request-action")
+    #print("My first request-action")
 
     agent1.update_env(response)
     state = torch.from_numpy(agent1.get_state()).unsqueeze(0).unsqueeze(0)
@@ -161,9 +191,14 @@ for i_episode in range(num_episodes):
 
 
         action = select_action(state)
+
         print("Selected action: ", action)
 
-        selected_actions.append(action.item())
+        #action = torch.tensor([[int(input("Action:"))]], device=device, dtype=torch.long)
+
+
+
+
         if isinstance(action_dict[action.item()],
             ActionSubmit):  # TODO Could be performance improved by using max_key in utils
             action_dict[action.item()].init_task_name(env.forwarded_task_names)
@@ -182,6 +217,8 @@ for i_episode in range(num_episodes):
         if not done:
             rew = calc_reward(response['content']['percept'], env.forwarded_task_names, env.forwarded_task)
             collect_rewards.append(rew)
+            selected_actions.append(action.item())
+            selected_action_dict[action.item()].append(rew)
             reward = torch.tensor([[rew]])
 
             agent1.update_env(response)
@@ -190,6 +227,8 @@ for i_episode in range(num_episodes):
             collect_rewards.append(0)
             reward = torch.tensor([[0]])
             next_state = None
+
+        print("Agent Reward:", reward)
 
         # Store the transition in memory
         memory.push(state, action, next_state, reward)
@@ -206,20 +245,20 @@ for i_episode in range(num_episodes):
     # Update the target network, copying all weights and biases in DQN
     if i_episode % TARGET_UPDATE == 0:
         target_net.load_state_dict(policy_net.state_dict())
-        print("Target Update")
+        #print("Target Update")
 
-    if i_episode % 10:
-        torch.save(policy_net.state_dict(), f"policy_net_{i_episode}.pth")
-        torch.save(target_net.state_dict(), f"target_net_{i_episode}.pth")
-        plot_rewards(episode_rewards, num_episodes)
-        plot_actions(selected_actions, num_episodes)
+    if i_episode % 1 == 0:
+        torch.save(policy_net.state_dict(), f"weights/policy_net_{i_episode}.pth")
+        torch.save(target_net.state_dict(), f"weights/target_net_{i_episode}.pth")
+        plot_rewards(episode_rewards, i_episode)
+        plot_double_action(selected_action_dict, i_episode)
 
     process.kill()
     agent1.reset()
 
 print('Complete')
 plot_rewards(episode_rewards, "best")
-plot_actions(selected_actions, "best")
+plot_double_action(selected_action_dict, "best")
 
-torch.save(policy_net.state_dict(), f"policy_net_best.pth")
-torch.save(target_net.state_dict(), f"target_net_best.pth")
+torch.save(policy_net.state_dict(), f"weights/policy_net_best.pth")
+torch.save(target_net.state_dict(), f"weights/target_net_best.pth")
