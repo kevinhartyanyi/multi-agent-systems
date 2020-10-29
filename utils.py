@@ -187,3 +187,140 @@ def calc_reward(perception, task_names, tasks) -> int:
         #print("Reason to fail: ", perception["lastActionResult"])
         reward = -1
     return reward
+
+def get_attached_blocks(things, attached, cords=False):
+    blocks = []
+    for th in things:
+        x = th["x"]
+        y = th["y"]
+        isAttached = [x == x_a and y == y_a for x_a, y_a in attached]
+        #print("isAttached: ", isAttached)
+        if any(isAttached):
+            detail = th["details"]
+            typ = th["type"]
+            if cords:
+                blocks.append((x,y))
+            else:
+                blocks.append(get_things_details(typ, detail))
+    return blocks
+
+def block_used_in_lastAction(last_action_param, things, cords=False):
+    if last_action_param == "e":
+        cord = (1,0)
+    elif last_action_param == "w":
+        cord = (-1,0)
+    elif last_action_param == "n":
+        cord = (0,-1)
+    elif last_action_param == "s":
+        cord = (0,1)
+    else:
+        raise Exception("block_used_in_lastAction, called with wrong last_action_param")
+
+    for th in things:
+        x = th["x"]
+        y = th["y"]
+        typ = th["type"]
+        if x == cord[0] and y == cord[1] and typ == "block":
+            detail = th["details"]
+            if cords:
+                return (x, y)
+            else:
+                return get_things_details(typ, detail)
+    return None
+
+def l1_dist(cord1, cord2):
+    return abs(cord1[0] - cord2[0]) + abs(cord1[1] - cord2[1])
+
+def get_distance(things, search_typ, attached=None):
+    agent = (0,0)
+    dists = []
+    if search_typ == "block" or search_typ == "dispenser":
+        for th in things:
+            x = th["x"]
+            y = th["y"]
+            typ = th["type"]
+            isAttached = [x == x_a and y == y_a for x_a, y_a in attached]
+            # Skips the attached blocks
+            if typ == search_typ and not any(isAttached):
+                dists.append(l1_dist(agent, (x,y)))
+    elif search_typ == "goal":
+        pass
+    print("Distances: ", dists)
+    return min(dists) if len(dists) > 0 else -1
+
+
+def calc_reward_v2(perception, task_names, tasks) -> int:
+    reward = 0
+    success = "success" == perception["lastActionResult"]
+    last_action = perception["lastAction"]
+    last_action_param = perception["lastActionParams"][0]
+    things = perception["things"]
+    attached = perception["attached"]
+
+    attached_blocks = get_attached_blocks(things, attached)
+    attached_blocks_cords = get_attached_blocks(things, attached, cords=True)
+
+    blocks_required_by_tasks = [int(i[4]) for i in tasks]
+
+    #print(f"Calc Action: {last_action}     Param: {last_action_param}")
+    if last_action == "skip":
+        reward = -1
+    elif last_action == "move":
+        if success:
+            #print("Required blocks: ", blocks_required_by_tasks)
+            #print("Attached blocks: ", attached_blocks)
+            if len(attached_blocks) > 0 and any([item in blocks_required_by_tasks for item in attached_blocks]):
+                reward = 2
+            elif len(attached_blocks) > 0:
+                reward = 1
+            else:
+                reward = 0
+        else:
+            reward = -1
+    elif last_action == "attach":
+        #print("Required blocks: ", blocks_required_by_tasks)
+        #print("Block used in last action: ", block_used_in_lastAction(last_action_param, things))
+        block_cord = block_used_in_lastAction(last_action_param, things, cords=True)
+        print("Last block cord: ", block_cord)
+        print("Attached block cord: ", attached_blocks_cords)
+        if success and any(x == block_cord[0] and block_cord[1] == y for x,y in attached_blocks_cords):
+            reward = -1 # TODO: This is a temporal solution so the agent won't attach to an already attached block,
+                        # TODO: but it makes the first real attachment fail
+        elif success and any([item == block_used_in_lastAction(last_action_param, things) for item in blocks_required_by_tasks]):
+            reward = 20
+        elif success:
+            reward = 10
+        elif get_distance(things, "block", attached) == 1:
+            reward = 5
+        elif get_distance(things, "block", attached) == 2:
+            reward = 3
+        elif get_distance(things, "block", attached) == 3:
+            reward = 1
+        else:
+            reward = -1
+
+        print("Closest block: ", get_distance(things, "block", attached))
+
+
+
+
+    elif last_action == "submit":
+        ind = -1
+        if success:
+            for i, name in enumerate(task_names):
+                print(name, last_action_param[0])
+                if name == last_action_param[0]:
+                    ind = i
+                    print("Found")
+                    break
+            else:
+                print("\n\n\nERROR: Didn't find index for submit (task name)\n\n\n")
+            reward = tasks[ind][3]
+        elif "goal" in perception["terrain"].keys() and [0,0] in perception["terrain"]["goal"]:
+            reward = 1
+        else:
+            reward = -1
+    elif not success:
+        #print("Reason to fail: ", perception["lastActionResult"])
+        reward = -1
+    return reward

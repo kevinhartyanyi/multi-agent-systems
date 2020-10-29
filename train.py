@@ -3,7 +3,7 @@ from random_agent import *
 from reinforce_agent import *
 from dqn_network import *
 from subprocess import Popen, PIPE
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as pltbiztos
 
 def plot_rewards(rewards, name):
     plt.clf()
@@ -60,7 +60,7 @@ n_actions = len(action_dict)
 policy_net = DQN(25, 24, n_actions).to(device).to(float)
 target_net = DQN(25, 24, n_actions).to(device).to(float)
 
-policy_net.load_state_dict(torch.load("policy_net_best.pth"))
+#policy_net.load_state_dict(torch.load("policy_net_best.pth"))
 target_net.load_state_dict(policy_net.state_dict())
 target_net.eval()
 
@@ -192,9 +192,10 @@ for i_episode in range(num_episodes):
 
         action = select_action(state)
 
-        print("Selected action: ", action)
 
-        #action = torch.tensor([[int(input("Action:"))]], device=device, dtype=torch.long)
+        print("Selected action (agent): ", action)
+
+        action = torch.tensor([[int(input("Action:"))]], device=device, dtype=torch.long)
 
 
 
@@ -215,7 +216,7 @@ for i_episode in range(num_episodes):
 
         # Observe new state
         if not done:
-            rew = calc_reward(response['content']['percept'], env.forwarded_task_names, env.forwarded_task)
+            rew = calc_reward_v2(response['content']['percept'], env.forwarded_task_names, env.forwarded_task)
             collect_rewards.append(rew)
             selected_actions.append(action.item())
             selected_action_dict[action.item()].append(rew)
@@ -228,7 +229,9 @@ for i_episode in range(num_episodes):
             reward = torch.tensor([[0]])
             next_state = None
 
-        print("Agent Reward:", reward)
+        # print("Agent Reward:", reward)
+        action_dict[action.item()].print(reward.item())
+        print("\n")
 
         # Store the transition in memory
         memory.push(state, action, next_state, reward)
