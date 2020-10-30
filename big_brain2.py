@@ -37,7 +37,7 @@ Rewards:
     12. - detach[w]
         //Can't stack//
         +10 if successful
-        +5 if fails, but the agent has any blocks attached
+        +1 if fails, but the agent has any blocks attached
         -1 otherwise
 
     13. - rotate[cw]
@@ -58,7 +58,7 @@ Rewards:
 
     19 -> 19+task_num. - submit[0-task_num]
         //Can't stack//
-        +100 + task_point if successful
+        +500 + task_point if successful
         +60 if agent has any blocks attached and stands on a goal cell
         +50 if agent has any blocks attached and the closest goal cell from the agent is 1 distance (L1) away
         +40 if agent has any blocks attached and the closest goal cell from the agent is 2 distance (L1) away

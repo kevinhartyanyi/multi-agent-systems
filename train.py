@@ -60,7 +60,7 @@ n_actions = len(action_dict)
 policy_net = DQN(25, 24, n_actions).to(device).to(float)
 target_net = DQN(25, 24, n_actions).to(device).to(float)
 
-#policy_net.load_state_dict(torch.load("policy_net_best.pth"))
+policy_net.load_state_dict(torch.load("weights/policy_net_best.pth"))
 target_net.load_state_dict(policy_net.state_dict())
 target_net.eval()
 
@@ -149,7 +149,7 @@ else:
     agent1 = Random_Agent("agentA1", agent_id, env)
 
 
-monitor = True
+monitor = False
 
 for i_episode in range(num_episodes):
     print("Episode: ", i_episode)
@@ -184,6 +184,12 @@ for i_episode in range(num_episodes):
     state = torch.from_numpy(agent1.get_state()).unsqueeze(0).unsqueeze(0)
     #xstate = state.double()
 
+    attached_cords_in_last_response = [] # For the calc_reward_v2 function so it won't give points if the agent attaches to an already attached block
+    last_lastAction = None # Best name EUNE (for the calc_reward_v2 function task rewards)
+    last_lastAction_param = None # Best name EUW
+    last_task_names = []
+    last_tasks = []
+
     collect_rewards = []
 
     for t in count():
@@ -193,9 +199,9 @@ for i_episode in range(num_episodes):
         action = select_action(state)
 
 
-        print("Selected action (agent): ", action)
+        #print("Selected action (agent): ", action)
 
-        action = torch.tensor([[int(input("Action:"))]], device=device, dtype=torch.long)
+        #action = torch.tensor([[int(input("Action:"))]], device=device, dtype=torch.long)
 
 
 
@@ -216,7 +222,15 @@ for i_episode in range(num_episodes):
 
         # Observe new state
         if not done:
-            rew = calc_reward_v2(response['content']['percept'], env.forwarded_task_names, env.forwarded_task)
+            last_last_action_and_param = (last_lastAction, last_lastAction_param)
+            rew = calc_reward_v2(response['content']['percept'], last_task_names, last_tasks, attached_cords_in_last_response, last_last_action_and_param)
+            attached_cords_in_last_response = get_attached_blocks(response['content']['percept']['things'],
+                                                                  response['content']['percept']['attached'], cords=True)
+            last_lastAction = response['content']['percept']['lastAction']
+            last_lastAction_param =  response['content']['percept']['lastActionParams'][0]
+            last_task_names = env.forwarded_task_names
+            last_tasks = env.forwarded_task
+
             collect_rewards.append(rew)
             selected_actions.append(action.item())
             selected_action_dict[action.item()].append(rew)
@@ -230,8 +244,8 @@ for i_episode in range(num_episodes):
             next_state = None
 
         # print("Agent Reward:", reward)
-        action_dict[action.item()].print(reward.item())
-        print("\n")
+        #action_dict[action.item()].print(reward.item())
+        #print("\n")
 
         # Store the transition in memory
         memory.push(state, action, next_state, reward)
@@ -250,7 +264,7 @@ for i_episode in range(num_episodes):
         target_net.load_state_dict(policy_net.state_dict())
         #print("Target Update")
 
-    if i_episode % 1 == 0:
+    if i_episode % 10 == 0:
         torch.save(policy_net.state_dict(), f"weights/policy_net_{i_episode}.pth")
         torch.save(target_net.state_dict(), f"weights/target_net_{i_episode}.pth")
         plot_rewards(episode_rewards, i_episode)

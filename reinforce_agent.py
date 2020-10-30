@@ -196,7 +196,7 @@ class Reinforce_Agent(object):
     def send(self, action: int):
         agent_message = ActionReply(self.request_id, action_dict[action])
         msg = agent_message.msg()
-        # print(f"Sending: {msg}")
+        #print(f"Sending: {msg}")
         self.sock.sendall(msg.encode())
 
     def receive(self):
@@ -205,7 +205,7 @@ class Reinforce_Agent(object):
             if recv != "":
                 break
         response = json.loads(recv.rstrip('\x00'))
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
         if response['type'] == "request-action":
             self.request_id = response['content']['id']
             self.step[0] = response['content']['step'] # Current steps

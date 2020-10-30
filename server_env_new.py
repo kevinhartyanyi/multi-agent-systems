@@ -168,7 +168,7 @@ class Server():
             free_places = [i for i, n in enumerate(self.forwarded_task_names) if n == str(assumptions.IGNORE)]
             not_stored_yet = [i for i, n in enumerate(preprocessed_tasks) if n[0] not in self.forwarded_task_names]
 
-        if True:
+        if False:
             print("Task List")
             for i in range(len(self.forwarded_task_names)):
                 print(f"Task name: {self.forwarded_task_names[i]} \t values: {self.forwarded_task[i]}")
