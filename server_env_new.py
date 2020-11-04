@@ -37,8 +37,7 @@ class Server():
         self.state = None # Observation_space instance (vision_grid, agent_attached, forwarded_task, energy)
         
     def reset(self):
-        ## TODO Start server (subprocess)
-        return None
+        self.__init__()
         
     def get_state_size(self):
         return self.vision_grid.size + self.agent_attached.size + self.forwarded_task.size + self.energy.size
@@ -110,7 +109,8 @@ class Server():
                     observation_map[ind][4] = get_terrain_code(name)
                     #print("Terrain cords: ", cords)
             except:
-                print(f"Terrain: {name} not found")
+                #print(f"Terrain: {name} not found")
+                pass
 
 
         self.vision_grid = np.asarray(observation_map)
@@ -139,13 +139,13 @@ class Server():
 
 
             # Convert block
-            block_num = get_things_code("block")
+            block_num = get_things_details("block", block)
 
             preprocessed_tasks.append([
                 name, x, y, deadline, points, block_num
             ])
 
-        print("Preprocessed Tasks: \n", preprocessed_tasks)
+        #print("Preprocessed Tasks: \n", preprocessed_tasks)
 
         # Check if stored task is still active
         task_names = [t[0] for t in preprocessed_tasks]
@@ -168,7 +168,7 @@ class Server():
             free_places = [i for i, n in enumerate(self.forwarded_task_names) if n == str(assumptions.IGNORE)]
             not_stored_yet = [i for i, n in enumerate(preprocessed_tasks) if n[0] not in self.forwarded_task_names]
 
-        if True:
+        if False:
             print("Task List")
             for i in range(len(self.forwarded_task_names)):
                 print(f"Task name: {self.forwarded_task_names[i]} \t values: {self.forwarded_task[i]}")

@@ -6,7 +6,7 @@
     "launch" : "key",
     "port" : 12300,
     "backlog" : 10000,
-    "agentTimeout" : 4000,
+    "agentTimeout" : 400000,
     "resultPath" : "results",
     "logLevel" : "normal",
     "logPath" : "logs",
@@ -22,9 +22,9 @@
 
   "match" : [
     {
-      "setup" : "conf/setup/test.txt",
+      "setup" : "/home/kevin/Programming/School/MSc_1/multi_agent/other_branch/multi-agent-systems/massim-2019-2.0/server/conf/setup/test.txt",
 
-      "steps" : 1,
+      "steps" : 500,
       "randomSeed" : 17,
       "randomFail" : 0,
       "entities" : [{"standard" : 1}],
@@ -37,7 +37,7 @@
       "grid" : {
         "height" : 40,
         "width" : 40,
-        "file" : "conf/maps/test40x40.bmp"
+        "file" : "/home/kevin/Programming/School/MSc_1/multi_agent/other_branch/multi-agent-systems/massim-2019-2.0/server/conf/maps/test40x40.bmp"
       },
 
       "blockTypes" : [3, 3],
