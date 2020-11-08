@@ -30,11 +30,14 @@ class Reinforce_Agent(object):
         self.walls = assumptions.IGNORE * np.ones((assumptions.WALL_NUM, 2))
         
         # Policy Network
-        num_inputs = self.env.get_state_size() + self.step.size + self.dispensers.size + self.walls.size
-        print("NUM_INPUTS:", num_inputs)
+        self.num_inputs = self.env.get_state_size() + self.step.size + self.dispensers.size + self.walls.size
+        print("NUM_INPUTS:", self.num_inputs)
         num_actions = len(action_dict)
-        hidden_size = int((2/3) * num_inputs + num_actions)
-        self.policy_network = PolicyNetwork(num_inputs, num_actions, hidden_size)
+        hidden_size = int((2/3) * self.num_inputs + num_actions)
+        self.policy_network = PolicyNetwork(self.num_inputs, num_actions, hidden_size)
+
+    def get_input_size(self):
+        return self.num_inputs
         
     def act(self):
         state = np.hstack([x.flatten() for x in self.state])
@@ -63,9 +66,10 @@ class Reinforce_Agent(object):
         self.walls = assumptions.IGNORE * np.ones((assumptions.WALL_NUM, 2))
 
     def get_state(self):
-        state = np.hstack([x.flatten() for x in self.state] + [0.5 for i in range(14)]).reshape((25,24))
+        state_ff = np.hstack([x.flatten() for x in self.state])
+        state_conv = np.hstack([x.flatten() for x in self.state] + [0.5 for i in range(14)]).reshape((25,24))
         #print("State shape: ", state.shape)
-        return state
+        return state_ff
         
     def _update_coords(self, direction: int):
         if direction == 1:

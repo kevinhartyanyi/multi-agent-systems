@@ -71,3 +71,33 @@ class DQN(nn.Module):
 
 
 
+class FFNet(nn.Module):
+    def __init__(self, input, output):
+        super(FFNet, self).__init__()
+        self.net = nn.Sequential(  # sequential operation
+            nn.Linear(input, 30),
+            nn.Sigmoid(),
+            nn.Linear(30, 30),
+            nn.Sigmoid(),
+            nn.Linear(30, 30),
+            nn.Sigmoid(),
+            nn.Linear(30, output)
+        )
+
+        """self.l1 = nn.Linear(input, 30)
+        self.l2 = nn.Linear(30, 30)
+        self.l3 = nn.Linear(30, 30)
+        self.head = nn.Linear(30, output)"""
+
+    # Called with either one element to determine next action, or a batch
+    # during optimization. Returns tensor([[left0exp,right0exp]...]).
+    def forward(self, x):
+        #x = F.sigmoid(self.l1(x))
+        #x = F.sigmoid(self.l2(x))
+        #x = F.sigmoid(self.l3(x))
+        #tmp2 = x.view(x.size(0), -1)
+        #return self.head(x)
+        return self.net(x)
+
+
+
