@@ -50,7 +50,7 @@ def plot_double_action(actions, name):
 
 
 env = Server()
-num_episodes = 100
+num_episodes = 1000
 
 agent_id = 1
 
@@ -123,16 +123,25 @@ def optimize_model():
     # detailed explanation). This converts batch-array of Transitions
     # to Transition of batch-arrays.
     batch = Transition(*zip(*transitions))
+    #print(batch)
 
     # Compute a mask of non-final states and concatenate the batch elements
     # (a final state would've been the one after which simulation ended)
     non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
                                           batch.next_state)), device=device, dtype=torch.bool)
+    #print(batch.next_state)
     non_final_next_states = torch.cat([s for s in batch.next_state
                                                 if s is not None])
     state_batch = torch.cat(batch.state)
-    print("Batch action shape: ", batch.action.shape)
-    print("Batch squeezed action shape: ", batch.action.unsqueeze(0).shape)
+    #print("Batch action: ", batch.action)
+    #print("Batch action shape: ", batch.action[0].dim)
+    #print("Batch squeezed action shape: ", batch.action[0].unsqueeze(0).shape)
+    batch_action_0 = batch.action[0]
+    #print("Len: ", len(batch.action))
+    while (len(batch_action_0.shape) < 2):  # Hmmm
+        #print("Increase")
+        batch_action_0 = batch_action_0.unsqueeze(0)
+    batch = batch._replace(action=(batch_action_0,))
     action_batch = torch.cat(batch.action)
     reward_batch = torch.cat(batch.reward)
 
@@ -151,26 +160,28 @@ def optimize_model():
       loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
     """
     state_action_values_tmp = policy_net(state_batch)
-    print("Base state_action_values_tmp: ", state_action_values_tmp)
-    print("Base state_action_values_tmp.shape: ", state_action_values_tmp.shape)
+    #print("Base state_action_values_tmp: ", state_action_values_tmp)
+    #print("Base state_action_values_tmp.shape: ", state_action_values_tmp.shape)
 
     state_action_values_ff = policy_net(state_batch).unsqueeze(0)
-    print("FF state_action_values_ff: ", state_action_values_ff)
-    print("FF state_action_values_ff.shape: ", state_action_values_ff.shape)
+    #print("FF state_action_values_ff: ", state_action_values_ff)
+    #print("FF state_action_values_ff.shape: ", state_action_values_ff.shape)
 
     if model_conv:
         state_action_values = policy_net(state_batch).gather(1, action_batch)
     else:
         state_action_values = policy_net(state_batch).unsqueeze(0)
-        print("FF dims:", len(state_action_values.shape))
+        #print("FF dims:", len(state_action_values.shape))
         while(len(state_action_values.shape) > 2): # Hmmm
-            print("Reduce")
+            #print("Reduce")
             state_action_values = state_action_values.squeeze(0)
-        print("FF dims after:", len(state_action_values.shape))
+        #print("FF dims after:", len(state_action_values.shape))
         state_action_values = state_action_values.gather(1, action_batch)
     #
-    print("USED state_action_values:",state_action_values)
-    print("USED state_action_values shape:",state_action_values.shape)
+    #print("USED state_action_values:",state_action_values)
+    #print("USED state_action_values shape:",state_action_values.shape)
+
+
     # state_action_values: tensor([[-0.2770]], dtype=torch.float64, grad_fn= < GatherBackward >)
     # shape: torch.Size([1, 1])
 
@@ -184,15 +195,15 @@ def optimize_model():
         target = target_net(non_final_next_states)
     else:
         target = target_net(non_final_next_states).squeeze(0)
-    print("Target: ", target)
-    print("Target shape: ", target.shape)
-    print("Target Net result: ", target.max(1)[0].detach())
-    print("Values:",next_state_values)
-    print("Values shape:",next_state_values.shape)
-    print("Non final:",non_final_mask)
-    print("Non final shape :",non_final_mask.shape)
-    print("Next final:",next_state_values[non_final_mask])
-    print("Next final shape:",next_state_values[non_final_mask].shape)
+    #print("Target: ", target)
+    #print("Target shape: ", target.shape)
+    #print("Target Net result: ", target.max(1)[0].detach())
+    #print("Values:",next_state_values)
+    #print("Values shape:",next_state_values.shape)
+    #print("Non final:",non_final_mask)
+    #print("Non final shape :",non_final_mask.shape)
+    #print("Next final:",next_state_values[non_final_mask])
+    #print("Next final shape:",next_state_values[non_final_mask].shape)
     next_state_values[non_final_mask] = target.max(1)[0].detach()
     """    
     Target:  tensor([[-1.6124, -0.9181, -0.2592, -0.0746,  1.9099, -0.1863, -0.7488, -0.7087,
@@ -225,7 +236,7 @@ def optimize_model():
     optimizer.zero_grad()
     loss.backward()
     #print(list(policy_net.parameters()))
-    print("param len:",len(list(policy_net.parameters())))
+    #print("param len:",len(list(policy_net.parameters())))
     for param in policy_net.parameters():
         #print(param.shape)
         param.grad.data.clamp_(-1, 1)
@@ -270,7 +281,7 @@ for i_episode in range(num_episodes):
     else:
         state_ff = torch.from_numpy(agent1.get_state())
         state = state_ff
-    print("State shape:", state.shape) # State shape: torch.Size([1, 1, 25, 24])
+    #print("State shape:", state.shape) # State shape: torch.Size([1, 1, 25, 24])
     #xstate = state.double()
 
     attached_cords_in_last_response = [] # For the calc_reward_v2 function so it won't give points if the agent attaches to an already attached block
@@ -288,7 +299,7 @@ for i_episode in range(num_episodes):
         action = select_action(state)
 
 
-        print("Selected action (agent): ", action)
+        #print("Selected action (agent): ", action)
 
         #action = torch.tensor([[int(input("Action:"))]], device=device, dtype=torch.long)
 
@@ -332,7 +343,7 @@ for i_episode in range(num_episodes):
             reward = torch.tensor([[0]])
             next_state = None
 
-        print("Agent Reward:", reward)
+        #print("Agent Reward:", reward)
         #action_dict[action.item()].print(reward.item())
         #print("\n")
 
@@ -348,14 +359,14 @@ for i_episode in range(num_episodes):
             episode_rewards.append(np.average(collect_rewards))
             break
 
-        input("Press something")
+        #input("Press something")
 
     # Update the target network, copying all weights and biases in DQN
     if i_episode % TARGET_UPDATE == 0:
         target_net.load_state_dict(policy_net.state_dict())
         #print("Target Update")
 
-    if i_episode % 10 == 0:
+    if i_episode % 1 == 0:
         torch.save(policy_net.state_dict(), f"weights/policy_net_{i_episode}.pth")
         torch.save(target_net.state_dict(), f"weights/target_net_{i_episode}.pth")
         plot_rewards(episode_rewards, i_episode)
