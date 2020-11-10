@@ -104,7 +104,8 @@ def select_action(state):
             # t.max(1) will return largest column value of each row.
             # second column on max result is index of where max element was
             # found, so we pick action with the larger expected reward.
-            return policy_net(state).max(1)[1].view(1, 1)
+            #return policy_net(state).max(1)[1].view(1, 1)
+            return policy_net(state).argmax()
     else:
         return torch.tensor([[random.randrange(n_actions)]], device=device, dtype=torch.long)
 
@@ -130,6 +131,8 @@ def optimize_model():
     non_final_next_states = torch.cat([s for s in batch.next_state
                                                 if s is not None])
     state_batch = torch.cat(batch.state)
+    print("Batch action shape: ", batch.action.shape)
+    print("Batch squeezed action shape: ", batch.action.unsqueeze(0).shape)
     action_batch = torch.cat(batch.action)
     reward_batch = torch.cat(batch.reward)
 
