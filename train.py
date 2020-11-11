@@ -337,6 +337,7 @@ for i_episode in range(num_episodes):
             reward = torch.tensor([[rew]])
 
             agent1.update_env(response)
+            print("Agent get state:", agent1.get_state())
             next_state = torch.from_numpy(agent1.get_state()).type(torch.DoubleTensor).unsqueeze(0).unsqueeze(0)
         else:
             collect_rewards.append(0)
@@ -348,6 +349,9 @@ for i_episode in range(num_episodes):
         #print("\n")
 
         # Store the transition in memory
+        print(next_state)
+        print("Done: ",done)
+        #if next_state is not None:
         memory.push(state, action, next_state, reward)
 
         # Move to the next state
@@ -372,8 +376,10 @@ for i_episode in range(num_episodes):
         plot_rewards(episode_rewards, i_episode)
         plot_double_action(selected_action_dict, i_episode)
 
+    print("Memory reset?")
     process.kill()
     agent1.reset()
+    memory.reset()
 
 print('Complete')
 plot_rewards(episode_rewards, "best")
