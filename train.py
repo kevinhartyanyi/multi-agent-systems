@@ -3,50 +3,8 @@ from random_agent import *
 from reinforce_agent import *
 from dqn_network import *
 from subprocess import Popen, PIPE
-import matplotlib.pyplot as pltbiztos
-
-def plot_rewards(rewards, name):
-    plt.clf()
-    plt.plot(rewards)
-    plt.title('Training Avg Rewards')
-    plt.xlabel('Episode number')
-    plt.ylabel('Average Reward')
-    plt.savefig(f"plots/Rewards_reward2_{name}.png")
-
-def plot_actions(actions, name):
-    plt.clf()
-    fig, ax = plt.subplots(figsize=(20,10))
-    n, bins, patches = ax.hist(actions, len(action_dict))
-    ax.set_xlabel('Actions')
-    ax.set_ylabel('Number of times chosen by the agent')
-    ax.set_title('Actions Histogram')
-    ax.set_xticks(actions)
-    plt.savefig(f"plots/Actions_histogram_reward2_{name}.png")
-
-def plot_double_action(actions, name):
-
-    failed = [len(list(filter(lambda y: y < 0, v))) for k, v in actions.items()]
-    correct = [len(list(filter(lambda y: y >= 0, v))) for k, v in actions.items()]
-
-
-    plt.clf()
-    fig, ax = plt.subplots(figsize=(20, 10))
-    #n, bins, patches = ax.hist([failed, correct], list(range(len(action_dict))), density=True, histtype='bar', stacked=True)
-
-    N = len(action_dict)
-    ind = np.arange(N)  # the x locations for the groups
-    width = 0.35  # the width of the bars: can also be len(x) sequence
-
-    p1 = plt.bar(ind, correct, width)
-    p2 = plt.bar(ind, failed, width)
-
-    ax.set_xlabel('Actions')
-    ax.set_ylabel('Number of times chosen by the agent')
-    ax.set_title('Actions Histogram')
-    ax.set_xticks(list(range(len(action_dict))))
-    plt.legend((p1[0], p2[0]), ('Correct', 'Failed'))
-    #plt.show()
-    plt.savefig(f"plots/Actions_histogram_reward_{name}.png")
+from loq import *
+from plots import *
 
 BATCH_SIZE = 5
 GAMMA = 0.999
@@ -60,7 +18,7 @@ n_actions = len(action_dict)
 policy_net = DQN(25, 24, n_actions).to(device).to(float)
 target_net = DQN(25, 24, n_actions).to(device).to(float)
 
-policy_net.load_state_dict(torch.load("weights/policy_net_best.pth"))
+#policy_net.load_state_dict(torch.load("weights/policy_net_best.pth"))
 target_net.load_state_dict(policy_net.state_dict())
 target_net.eval()
 
@@ -150,6 +108,8 @@ else:
 
 
 monitor = False
+
+log = Log(name="test")
 
 for i_episode in range(num_episodes):
     print("Episode: ", i_episode)
@@ -269,6 +229,9 @@ for i_episode in range(num_episodes):
         torch.save(target_net.state_dict(), f"weights/target_net_{i_episode}.pth")
         plot_rewards(episode_rewards, i_episode)
         plot_double_action(selected_action_dict, i_episode)
+
+    log.save_rewards(episode_rewards)
+    log.save_actions(selected_action_dict)
 
     process.kill()
     agent1.reset()

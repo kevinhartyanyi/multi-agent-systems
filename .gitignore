@@ -1,6 +1,8 @@
 massim-2019-2.0/server/replays/
 replays/
 results/
+plots/
+
 *.pth
 *.png
 
