@@ -21,7 +21,7 @@ n_actions = len(action_dict)
 policy_net = (DQN(25, 24, n_actions).to(float)).to(device)
 target_net = (DQN(25, 24, n_actions).to(float)).to(device)
 
-#policy_net.load_state_dict(torch.load("weights/policy_net_best.pth"))
+policy_net.load_state_dict(torch.load("weights/policy_net_best.pth"))
 target_net.load_state_dict(policy_net.state_dict())
 target_net.eval()
 
@@ -98,7 +98,7 @@ def optimize_model():
 
 
 env = Server()
-num_episodes = 100
+num_episodes = 1000
 
 agent_id = 1
 
