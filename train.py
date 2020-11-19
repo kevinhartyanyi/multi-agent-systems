@@ -6,6 +6,9 @@ from subprocess import Popen, PIPE
 from loq import *
 from plots import *
 
+
+print("Train device:", device)
+
 BATCH_SIZE = 5
 GAMMA = 0.999
 EPS_START = 0.9
@@ -15,8 +18,8 @@ TARGET_UPDATE = 10
 
 n_actions = len(action_dict)
 
-policy_net = DQN(25, 24, n_actions).to(device).to(float)
-target_net = DQN(25, 24, n_actions).to(device).to(float)
+policy_net = (DQN(25, 24, n_actions).to(float)).to(device)
+target_net = (DQN(25, 24, n_actions).to(float)).to(device)
 
 #policy_net.load_state_dict(torch.load("weights/policy_net_best.pth"))
 target_net.load_state_dict(policy_net.state_dict())
@@ -28,6 +31,7 @@ memory = ReplayMemory(10000)
 steps_done = 0
 
 def select_action(state):
+    state = state.to(device)
     global steps_done
     sample = random.random()
     eps_threshold = EPS_END + (EPS_START - EPS_END) * \
@@ -38,7 +42,7 @@ def select_action(state):
             # t.max(1) will return largest column value of each row.
             # second column on max result is index of where max element was
             # found, so we pick action with the larger expected reward.
-            return policy_net(state).max(1)[1].view(1, 1)
+            return policy_net(state).to(device).max(1)[1].view(1, 1)
     else:
         return torch.tensor([[random.randrange(n_actions)]], device=device, dtype=torch.long)
 
@@ -62,10 +66,10 @@ def optimize_model():
     non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
                                           batch.next_state)), device=device, dtype=torch.bool)
     non_final_next_states = torch.cat([s for s in batch.next_state
-                                                if s is not None])
-    state_batch = torch.cat(batch.state)
-    action_batch = torch.cat(batch.action)
-    reward_batch = torch.cat(batch.reward)
+                                                if s is not None]).to(device)
+    state_batch = torch.cat(batch.state).to(device)
+    action_batch = torch.cat(batch.action).to(device)
+    reward_batch = torch.cat(batch.reward).to(device)
 
     # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
     # columns of actions taken. These are the actions which would've been taken
@@ -78,7 +82,7 @@ def optimize_model():
     # This is merged based on the mask, such that we'll have either the expected
     # state value or 0 in case the state was final.
     next_state_values = torch.zeros(BATCH_SIZE, device=device).to(float)
-    next_state_values[non_final_mask] = target_net(non_final_next_states).max(1)[0].detach()
+    next_state_values[non_final_mask] = target_net(non_final_next_states).to(device).max(1)[0].detach()
     # Compute the expected Q values
     expected_state_action_values = (next_state_values * GAMMA) + reward_batch
 
@@ -124,15 +128,15 @@ for i_episode in range(num_episodes):
             stdout=PIPE, stderr=PIPE, stdin=PIPE)
     else:
         process = Popen(
-            ["java", "-jar", "massim-2019-2.0/server/server-2019-2.1-jar-with-dependencies.jar",
-             "-conf", "massim-2019-2.0/server/conf/SampleConfig-Deliverable1.json"],
+            ["java", "-jar", "server-2019-2.1-jar-with-dependencies.jar",
+             "-conf", "SampleConfig-Deliverable1.json"],
             stdout=PIPE, stderr=PIPE, stdin=PIPE)
 
-    time.sleep(5)
+    time.sleep(1)
     agent1.connect()
     assert agent1.init_agent()  # auth-response
     #print("YES")
-    time.sleep(2)
+    #time.sleep(2)
     process.stdin.write(b'\n')
     process.stdin.flush()
 
@@ -235,6 +239,7 @@ for i_episode in range(num_episodes):
 
     process.kill()
     agent1.reset()
+    memory.reset()
 
 print('Complete')
 plot_rewards(episode_rewards, "best")
