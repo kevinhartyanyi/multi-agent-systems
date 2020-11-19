@@ -21,7 +21,11 @@ n_actions = len(action_dict)
 policy_net = (DQN(25, 24, n_actions).to(float)).to(device)
 target_net = (DQN(25, 24, n_actions).to(float)).to(device)
 
-policy_net.load_state_dict(torch.load("weights/policy_net_best.pth"))
+try:
+    policy_net.load_state_dict(torch.load("weights/policy_net_best.pth"))
+    print("Using pretrained model")
+except: 
+    print("Failed loading pretrained model -> starting training from zero")
 target_net.load_state_dict(policy_net.state_dict())
 target_net.eval()
 
