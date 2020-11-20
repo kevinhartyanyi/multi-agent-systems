@@ -64,10 +64,7 @@ class DQN(nn.Module):
     # Called with either one element to determine next action, or a batch
     # during optimization. Returns tensor([[left0exp,right0exp]...]).
     def forward(self, x):
-        x = F.relu(self.bn1(self.conv1(x)))
-        x = F.relu(self.bn2(self.conv2(x)))
-        x = F.relu(self.bn3(self.conv3(x)))
+        x = F.sigmoid(self.bn1(self.conv1(x)))
+        x = F.sigmoid(self.bn2(self.conv2(x)))
+        x = F.sigmoid(self.bn3(self.conv3(x)))
         return self.head(x.view(x.size(0), -1))
-
-
-

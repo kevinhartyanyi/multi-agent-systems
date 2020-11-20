@@ -2,11 +2,11 @@
   "server" : {
     "tournamentMode" : "round-robin",
     "teamsPerMatch" : 1,
-    "teamSize" : 1,
+    "teamSize" : 10,
     "launch" : "key",
     "port" : 12300,
     "backlog" : 10000,
-    "agentTimeout" : 400000,
+    "agentTimeout" : 4000,
     "resultPath" : "results",
     "logLevel" : "normal",
     "logPath" : "logs",
@@ -22,12 +22,12 @@
 
   "match" : [
     {
-      "setup" : "/home/szilvi/workspace/multi-agent-systems/massim-2019-2.0/server/conf/setup/test.txt",
+      "setup" : "conf/setup/test.txt",
 
       "steps" : 500,
       "randomSeed" : 17,
       "randomFail" : 0,
-      "entities" : [{"standard" : 1}],
+      "entities" : [{"standard" : 10}],
       "clearSteps" : 3,
       "clearEnergyCost" : 50,
       "disableDuration" : 4,
@@ -37,14 +37,14 @@
       "grid" : {
         "height" : 40,
         "width" : 40,
-        "file" : "/home/szilvi/workspace/multi-agent-systems/massim-2019-2.0/server/conf/maps/test40x40.bmp"
+        "file" : "conf/maps/test40x40.bmp"
       },
 
       "blockTypes" : [3, 3],
       "dispensers" : [2, 3],
 
       "tasks" : {
-        "size" : [1, 1],
+        "size" : [2, 3],
         "duration" : [100, 200],
         "probability" : 0.05
       },
@@ -60,7 +60,16 @@
 
   "teams" : {
     "A" : [
-      ["agentA1", "1"]
-    ]
+      ["agentA0", "10"],
+      ["agentA1", "10"],
+      ["agentA2", "10"],
+      ["agentA3", "10"],
+      ["agentA4", "10"],
+      ["agentA5", "10"],
+      ["agentA6", "10"],
+      ["agentA7", "10"],
+      ["agentA8", "10"],
+      ["agentA9", "10"]
+    ]  
   }
 }

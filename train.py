@@ -4,7 +4,7 @@ from reinforce_agent import *
 from dqn_network import *
 from subprocess import Popen, PIPE
 import matplotlib.pyplot as pltbiztos
-
+#https://github.com/cyoon1729/Multi-agent-reinforcement-learning/tree/master/MADDPG
 def plot_rewards(rewards, name):
     plt.clf()
     plt.plot(rewards)
@@ -136,7 +136,7 @@ def optimize_model():
 
 
 env = Server()
-num_episodes = 100
+num_episodes = 500
 
 agent_id = 1
 
@@ -149,7 +149,7 @@ else:
     agent1 = Random_Agent("agentA1", agent_id, env)
 
 
-monitor = False
+monitor = True
 
 for i_episode in range(num_episodes):
     print("Episode: ", i_episode)
@@ -272,6 +272,7 @@ for i_episode in range(num_episodes):
 
     process.kill()
     agent1.reset()
+    memory = ReplayMemory(10000)
 
 print('Complete')
 plot_rewards(episode_rewards, "best")
