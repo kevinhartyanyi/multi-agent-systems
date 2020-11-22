@@ -2,11 +2,11 @@
   "server" : {
     "tournamentMode" : "round-robin",
     "teamsPerMatch" : 1,
-    "teamSize" : 1,
+    "teamSize" : 2,
     "launch" : "key",
     "port" : 12300,
     "backlog" : 10000,
-    "agentTimeout" : 400000,
+    "agentTimeout" : 4000,
     "resultPath" : "results",
     "logLevel" : "normal",
     "logPath" : "logs",
@@ -27,7 +27,7 @@
       "steps" : 500,
       "randomSeed" : 17,
       "randomFail" : 0,
-      "entities" : [{"standard" : 1}],
+      "entities" : [{"standard" : 2}],
       "clearSteps" : 3,
       "clearEnergyCost" : 50,
       "disableDuration" : 4,
@@ -44,7 +44,7 @@
       "dispensers" : [2, 3],
 
       "tasks" : {
-        "size" : [1, 1],
+        "size" : [2, 3],
         "duration" : [100, 200],
         "probability" : 0.05
       },
@@ -60,7 +60,8 @@
 
   "teams" : {
     "A" : [
-      ["agentA1", "1"]
+      ["agentA0", "10"],
+      ["agentA1", "10"]
     ]
   }
 }

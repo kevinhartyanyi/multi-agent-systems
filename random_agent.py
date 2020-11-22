@@ -28,7 +28,7 @@ class Random_Agent(object):
         #high_level_thinking = directions[ind]  # Prediction
 
         #ind += 1 # TODO: This is only temporary
-        
+
         if 1 <= ind <= 4: # Only need to update the map if we move
             self.update_cords(ind)
 
@@ -38,7 +38,7 @@ class Random_Agent(object):
 
     def get_state(self):
         """
-        Reinforce_Agent has: [0.5 for i in range(14)], while this one has [0.5 for i in range(13)] 
+        Reinforce_Agent has: [0.5 for i in range(14)], while this one has [0.5 for i in range(13)]
         """
         state = np.hstack([x.flatten() for x in self.state] + [0.5 for i in range(13)]).reshape((25,24))
         return state
@@ -95,12 +95,12 @@ class Random_Agent(object):
                 self.dispensers[empty_dispensers[0]][2] = new_dispensers[new_dispensers_count][3]
                 empty_dispensers = empty_dispensers[1:]
             new_dispensers_count += 1
-        
+
         # Final state of state ;)
         self.state = np.array([data for data in self.state] + [self.max_energy, self.step, self.walls, self.dispensers])
         #self.state = np.asarray([self.state, self.walls, self.dispensers])
         print("State shape:", self.state.shape)
-        
+
         # Visualization
         #self.visualize_map()
         #print("Current wall\n", self.walls)
@@ -161,7 +161,7 @@ class Random_Agent(object):
         # print(f"Sending: {msg}")
         self.sock.sendall(msg.encode())
         response = json.loads(self.sock.recv(4096).decode("ascii").rstrip('\x00'))
-        # print(f"Response: {response}")
+        print(f"Init_agent: {response}")
         return True if response["content"]["result"] == "ok" else False
 
     def send(self, action: int):
@@ -175,6 +175,7 @@ class Random_Agent(object):
             recv = self.sock.recv(4096).decode("ascii").rstrip('\x00')
             if recv != "":
                 break
+        print("RECV:", json.loads(recv))
         response = json.loads(recv.rstrip('\x00'))
         print("Response:", response)
         if response['type'] == "request-action":
