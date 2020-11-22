@@ -1,0 +1,73 @@
+{
+    "server" : {
+      "tournamentMode" : "round-robin",
+      "teamsPerMatch" : 1,
+      "teamSize" : 3,
+      "launch" : "key",
+      "port" : 12300,
+      "backlog" : 10000,
+      "agentTimeout" : 4000,
+      "resultPath" : "results",
+      "logLevel" : "normal",
+      "logPath" : "logs",
+      "replayPath" : "replays",
+      "maxPacketLength" : 65536
+     },
+  
+    "manual-mode" : [
+      ["A", "B"],
+      ["B", "C"],
+      ["A", "C"]
+    ],
+  
+    "match" : [
+      {
+        "setup" : "/home/kevin/Programming/School/MSc_1/multi_agent/other_branch/multi-agent-systems/massim-2019-2.0/server/conf/setup/test.txt",
+  
+        "steps" : 500,
+        "randomSeed" : 17,
+        "randomFail" : 0,
+        "entities" : [{"standard" : 3}],
+        "clearSteps" : 3,
+        "clearEnergyCost" : 50,
+        "disableDuration" : 4,
+        "maxEnergy" : 300,
+        "attachLimit" : 10,
+  
+        "grid" : {
+          "height" : 40,
+          "width" : 40,
+          "file" : "/home/kevin/Programming/School/MSc_1/multi_agent/other_branch/multi-agent-systems/massim-2019-2.0/server/conf/maps/test40x40.bmp"
+        },
+  
+        "blockTypes" : [3, 3],
+        "dispensers" : [2, 3],
+  
+        "tasks" : {
+          "size" : [1, 1],
+          "duration" : [100, 200],
+          "probability" : 0.05
+        },
+  
+        "events" : {
+          "chance" : 0,
+          "radius" : [3, 5],
+          "warning" : 5,
+          "create" : [5, 10]
+        }
+      }
+    ],
+  
+    "teams" : {
+        "A" :
+        [
+            ["agentA1", "1"],
+            ["agentA2", "1"],
+            ["agentA3", "1"],
+            ["agentA4", "1"],
+            ["agentA5", "1"],
+            ["agentA6", "1"]
+        ] 
+    }
+  }
+  

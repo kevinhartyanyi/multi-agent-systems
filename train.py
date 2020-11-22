@@ -60,7 +60,12 @@ n_actions = len(action_dict)
 policy_net = DQN(25, 24, n_actions).to(device).to(float)
 target_net = DQN(25, 24, n_actions).to(device).to(float)
 
-policy_net.load_state_dict(torch.load("weights/policy_net_best.pth"))
+try:
+    policy_net.load_state_dict(torch.load("weights/policy_net_best.pth"))
+    print("Using pretrained model")
+except: 
+    print("Failed loading pretrained model -> starting training from zero")
+
 target_net.load_state_dict(policy_net.state_dict())
 target_net.eval()
 
@@ -149,7 +154,7 @@ else:
     agent1 = Random_Agent("agentA1", agent_id, env)
 
 
-monitor = False
+monitor = True
 
 for i_episode in range(num_episodes):
     print("Episode: ", i_episode)
@@ -160,12 +165,12 @@ for i_episode in range(num_episodes):
     if monitor:
         process = Popen(
             ["java", "-jar", "massim-2019-2.0/server/server-2019-2.1-jar-with-dependencies.jar", "--monitor", "8000",
-             "-conf", "massim-2019-2.0/server/conf/SampleConfig-Deliverable1.json"],
+             "-conf", "massim-2019-2.0/server/conf/multi.json"],
             stdout=PIPE, stderr=PIPE, stdin=PIPE)
     else:
         process = Popen(
             ["java", "-jar", "massim-2019-2.0/server/server-2019-2.1-jar-with-dependencies.jar",
-             "-conf", "massim-2019-2.0/server/conf/SampleConfig-Deliverable1.json"],
+             "-conf", "massim-2019-2.0/server/conf/multi.json"],
             stdout=PIPE, stderr=PIPE, stdin=PIPE)
 
     time.sleep(5)
