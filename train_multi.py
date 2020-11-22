@@ -4,6 +4,7 @@ from reinforce_agent import *
 from dqn_network import *
 from subprocess import Popen, PIPE
 import matplotlib.pyplot as pltbiztos
+from agents_communicate import AgentCommunication
 
 def plot_rewards(rewards, name):
     plt.clf()
@@ -143,15 +144,9 @@ def optimize_model():
 env = Server()
 num_episodes = 100
 
-agent_id = 1
+team_size = 3
 
-EXTRA_SMART = True # CHANGE AT OWN RISK
-agent1 = None
-
-if EXTRA_SMART:
-    agent1 = Reinforce_Agent("agentA1", agent_id, env)
-else:
-    agent1 = Random_Agent("agentA1", agent_id, env)
+communication = AgentCommunication()
 
 
 monitor = True
@@ -173,91 +168,76 @@ for i_episode in range(num_episodes):
              "-conf", "massim-2019-2.0/server/conf/multi.json"],
             stdout=PIPE, stderr=PIPE, stdin=PIPE)
 
-    time.sleep(5)
-    agent1.connect()
-    assert agent1.init_agent()  # auth-response
-    #print("YES")
-    time.sleep(2)
-    process.stdin.write(b'\n')
-    process.stdin.flush()
+    communication.init_agents_subprocess(env, [f"agentA{num + 1}" for num in range(team_size)], process)
 
-    response = agent1.receive()  # sim-start (vision, step)
-    response = agent1.receive()  # request-action
-    #print("My first request-action")
+    communication.receive()
+    state_list = communication.update_env()
 
-    agent1.update_env(response)
-    state = torch.from_numpy(agent1.get_state()).unsqueeze(0).unsqueeze(0)
-    #xstate = state.double()
-
-    attached_cords_in_last_response = [] # For the calc_reward_v2 function so it won't give points if the agent attaches to an already attached block
-    last_lastAction = None # Best name EUNE (for the calc_reward_v2 function task rewards)
-    last_lastAction_param = None # Best name EUW
-    last_task_names = []
-    last_tasks = []
+    list_attached_cords_in_last_response = [[] for i in range(len(state_list))] # For the calc_reward_v2 function so it won't give points if the agent attaches to an already attached block
+    list_last_lastAction = [None for i in range(len(state_list))] # Best name EUNE (for the calc_reward_v2 function task rewards)
+    list_last_lastAction_param = [None for i in range(len(state_list))] # Best name EUW
+    list_last_task_names = [[] for i in range(len(state_list))]
+    list_last_tasks = [[] for i in range(len(state_list))]
 
     collect_rewards = []
 
     for t in count():
         # Select and perform an action
 
+        actions = []
 
-        action = select_action(state)
-
-
-        #print("Selected action (agent): ", action)
-
-        #action = torch.tensor([[int(input("Action:"))]], device=device, dtype=torch.long)
-
-
-
-
-        if isinstance(action_dict[action.item()],
-            ActionSubmit):  # TODO Could be performance improved by using max_key in utils
-            action_dict[action.item()].init_task_name(env.forwarded_task_names)
-
-        agent1.send(action.item())
-        response = agent1.receive()
-
-        done = response["type"] != "request-action"
+        for state in state_list: 
+            action = select_action(state) 
+            if isinstance(action_dict[action.item()],
+                ActionSubmit):  # TODO Could be performance improved by using max_key in utils
+                action_dict[action.item()].init_task_name(env.forwarded_task_names)
+            actions.append(action)
 
 
 
-        #_, reward, done, _ = env.step(action.item())
+        done = communication.agents_comm([act.item() for act in actions])
 
 
         # Observe new state
-        if not done:
-            print(response['content']['percept'])
-            last_last_action_and_param = (last_lastAction, last_lastAction_param)
-            rew = calc_reward_v2(response['content']['percept'], last_task_names, last_tasks, attached_cords_in_last_response, last_last_action_and_param)
-            attached_cords_in_last_response = get_attached_blocks(response['content']['percept']['things'],
-                                                                  response['content']['percept']['attached'], cords=True)
-            last_lastAction = response['content']['percept']['lastAction']
-            last_lastAction_param =  response['content']['percept']['lastActionParams'][0]
-            last_task_names = env.forwarded_task_names
-            last_tasks = env.forwarded_task
+        rewards = []
+        for i, response in enumerate(communication.responses):
+            if not done:
+                print(response['content']['percept']['lastActionParams'])
+                last_last_action_and_param = (list_last_lastAction[i], list_last_lastAction_param[i])
+                rew = calc_reward_v2(response['content']['percept'], list_last_task_names[i], list_last_tasks[i], list_attached_cords_in_last_response[i], last_last_action_and_param)
+                attached_cords_in_last_response = get_attached_blocks(response['content']['percept']['things'],
+                                                                    response['content']['percept']['attached'], cords=True)
+                list_last_lastAction[i] = response['content']['percept']['lastAction']
+                list_last_lastAction_param[i] =  response['content']['percept']['lastActionParams'][0]
+                list_last_task_names[i] = env.forwarded_task_names
+                list_last_tasks[i] = env.forwarded_task
 
-            collect_rewards.append(rew)
-            selected_actions.append(action.item())
-            selected_action_dict[action.item()].append(rew)
-            reward = torch.tensor([[rew]])
+                collect_rewards.append(rew)
+                selected_actions.append(action.item())
+                selected_action_dict[action.item()].append(rew)
+                reward = torch.tensor([[rew]])                
 
-            agent1.update_env(response)
-            next_state = torch.from_numpy(agent1.get_state()).type(torch.DoubleTensor).unsqueeze(0).unsqueeze(0)
-        else:
-            collect_rewards.append(0)
-            reward = torch.tensor([[0]])
-            next_state = None
+                #agent1.update_env(response)
+                #next_state = torch.from_numpy(agent1.get_state()).type(torch.DoubleTensor).unsqueeze(0).unsqueeze(0)
+            else:
+                collect_rewards.append(0)
+                reward = torch.tensor([[0]])
+                next_state = None
+
+            rewards.append(reward)
+
+        next_states_list = [None for i in range(state_list)] if done else communication.update_env()
 
         # print("Agent Reward:", reward)
         #action_dict[action.item()].print(reward.item())
         #print("\n")
 
-        # Store the transition in memory
-        memory.push(state, action, next_state, reward)
+        for i in range(len(state_list)):
+            # Store the transition in memory
+            memory.push(state_list[i], actions[i], next_states_list[i], rewards[i])
 
         # Move to the next state
-        state = next_state
+        state_list = next_states_list
 
         # Perform one step of the optimization (on the target network)
         optimize_model()
@@ -277,7 +257,7 @@ for i_episode in range(num_episodes):
         plot_double_action(selected_action_dict, i_episode)
 
     process.kill()
-    agent1.reset()
+    communication.reset_agents()
 
 print('Complete')
 plot_rewards(episode_rewards, "best")

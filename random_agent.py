@@ -36,6 +36,13 @@ class Random_Agent(object):
 
         return action_ind
 
+    def get_state(self):
+        """
+        Reinforce_Agent has: [0.5 for i in range(14)], while this one has [0.5 for i in range(13)] 
+        """
+        state = np.hstack([x.flatten() for x in self.state] + [0.5 for i in range(13)]).reshape((25,24))
+        return state
+
     def update_cords(self, direction: int):
         if direction == 1:
             self.map[:, 1] += 1
@@ -95,10 +102,10 @@ class Random_Agent(object):
         print("State shape:", self.state.shape)
         
         # Visualization
-        self.visualize_map()
-        print("Current wall\n", self.walls)
-        print("Current dispensers\n", self.dispensers)
-        print("Current attached\n", self.state[1])
+        #self.visualize_map()
+        #print("Current wall\n", self.walls)
+        #print("Current dispensers\n", self.dispensers)
+        #print("Current attached\n", self.state[1])
         # return self.act(state)
 
     def visualize_map(self):
