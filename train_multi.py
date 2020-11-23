@@ -168,7 +168,8 @@ for i_episode in range(num_episodes):
              "-conf", "massim-2019-2.0/server/conf/multi.json"],
             stdout=PIPE, stderr=PIPE, stdin=PIPE)
 
-    communication.init_agents_subprocess(env, [f"agentA{num + 1}" for num in range(team_size)], process)
+    time.sleep(2)
+    communication.init_agents_subprocess(env, [f"agentA{num + 1}" for num in range(team_size)], process, EXTRA_SMART = True)
 
     communication.receive()
     state_list = communication.update_env()
@@ -226,7 +227,7 @@ for i_episode in range(num_episodes):
 
             rewards.append(reward)
 
-        next_states_list = [None for i in range(state_list)] if done else communication.update_env()
+        next_states_list = [None for i in range(len(state_list))] if done else communication.update_env()
 
         # print("Agent Reward:", reward)
         #action_dict[action.item()].print(reward.item())

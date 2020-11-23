@@ -173,6 +173,7 @@ for i_episode in range(num_episodes):
              "-conf", "massim-2019-2.0/server/conf/multi.json"],
             stdout=PIPE, stderr=PIPE, stdin=PIPE)
 
+    print(process)
     time.sleep(5)
     agent1.connect()
     assert agent1.init_agent()  # auth-response

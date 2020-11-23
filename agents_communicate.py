@@ -42,7 +42,7 @@ class AgentCommunication:
         Could be improved with threading
         """
         def register_agent(agent):
-            #time.sleep(5)
+            
             agent.connect()
             assert agent.init_agent()  # auth-response
             #time.sleep(2)
@@ -52,7 +52,7 @@ class AgentCommunication:
 
         agent_id = 1
         self.agents = []
-
+        
         # REGISTER
         for i in range(len(agent_names)):
             print("Init agent:",agent_names[i])
@@ -79,7 +79,7 @@ class AgentCommunication:
         for agent in self.agents:
             self.responses.append(agent.receive()) # request-action
 
-    def agents_comm(self, actions):
+    def agents_comm_old(self, actions):
         self.responses = []
         done = False
         print("Comm start")
@@ -93,15 +93,33 @@ class AgentCommunication:
                 done = True
         print("Comm end")
         return done
+
+    def agents_comm(self, actions):
+        self.responses = []
+        done = False
+        #print("Comm start send")
+        for i, agent in enumerate(self.agents):
+            agent.send(actions[i])
+
+        #print("Comm start receive")
+        for i, agent in enumerate(self.agents):
+            response = agent.receive() # request-action
+            #print(response['content']['percept']['lastActionParams'])
+            self.responses.append(response) 
+
+            if response["type"] != "request-action":
+                done = True
+        #print("Comm end")
+        return done
     
     def reset_agents(self):
         for agent in self.agents:
             agent.reset()
 
 
-comm = AgentCommunication()
-env = Server()
-comm.init_agents(env, [f"agentA{num + 1}" for num in range(3)])
-comm.agents_comm([1,2,3])
-comm.agents_comm([1,2,3])
-comm.agents_comm([1,2,3])
+#comm = AgentCommunication()
+#env = Server()
+#comm.init_agents(env, [f"agentA{num + 1}" for num in range(3)])
+#comm.agents_comm([1,2,3])
+#comm.agents_comm([1,2,3])
+#comm.agents_comm([1,2,3])

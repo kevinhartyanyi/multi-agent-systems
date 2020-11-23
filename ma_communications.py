@@ -34,8 +34,11 @@ print('0:')
 
 
 print('1:')
-response = agent0.receive()  # sim-start (vision, step)
+response1 = agent0.receive()  # sim-start (vision, step)
 response = agent1.receive()  # request-action
+
+agent0.update_env(response1)
+agent1.update_env(response)
 
 print("My first request-action")
 actions = []
@@ -69,10 +72,12 @@ while response["type"] == "request-action":
     print('0:')
 
     response = agent0.receive()
+    agent0.update_env(response)
 
     print('1:')
 
     response = agent1.receive()
+    agent1.update_env(response)
 
     """
     if response["type"] == "request-action":  # We don't get reward for the last action :(
@@ -87,7 +92,7 @@ while response["type"] == "request-action":
 
 
     # TODO: Only for testing
-    time.sleep(0.5)
+    #time.sleep(0.5)
     #input()
 
 
