@@ -1,4 +1,5 @@
 import numpy as np
+from subprocess import Popen, PIPE
 
 import ma_assumptions
 from utils import vision_grid_size
@@ -31,10 +32,26 @@ class MultiAgentEnv():
 
             self.state.append(None)
 
-    def reset(self):
+    def reset(self, monitor=False):
         self.__init__()
+        if monitor:
+            process = Popen(
+                ["java", "-jar", "massim-2019-2.0/server/server-2019-2.1-jar-with-dependencies.jar", "--monitor", "8000",
+                 "-conf", "massim-2019-2.0/server/conf/SampleConfig-Deliverable1.json"],
+                stdout=PIPE, stderr=PIPE, stdin=PIPE)
+        else:
+            process = Popen(
+                ["java", "-jar", "massim-2019-2.0/server/server-2019-2.1-jar-with-dependencies.jar",
+                 "-conf", "massim-2019-2.0/server/conf/SampleConfig-Deliverable1.json"],
+                stdout=PIPE, stderr=PIPE, stdin=PIPE)
 
-    def step(self, action: int):
+    def observation_space(self, agent_id):
+        return self.vision_grid[agent_id].size + self.agent_attached[agent_id].size + self.forwarded_task[agent_id].size + self.energy[agent_id].size
+
+    def get_task_name(self, agent_id, index):
+        return self.forwarded_task_names[agent_id][index]
+
+    def step(self, actions: int):
         obs_n = []
         reward_n = []
         done_n = []

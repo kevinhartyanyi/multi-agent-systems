@@ -4,6 +4,7 @@ import numpy as np
 from agent import DDPGAgent
 from utils import MultiAgentReplayBuffer
 
+from ma_action_classes import action_dict
 
 class MADDPG:
 
@@ -42,14 +43,43 @@ class MADDPG:
             self.agents[i].update(indiv_reward_batch_i, obs_batch_i, global_state_batch, global_actions_batch, global_next_state_batch, next_global_actions)
             self.agents[i].target_update()
 
-    def run(self, max_episode, max_steps, batch_size):
+    def run(self, max_episode, max_steps, batch_size, monitor=False):
         episode_rewards = []
         for episode in range(max_episode):
-            states = self.env.reset()
+            attached_cords_in_last_response = [] # For the calc_reward_v2 function so it won't give points if the agent attaches to an already attached block
+            last_lastAction = []] # Best name EUNE (for the calc_reward_v2 function task rewards)
+            last_lastAction_param = [] # Best name EUW
+            last_task_names = []
+            last_tasks = []
+            responses = []
+
+            states = self.env.reset(monitor=monitor)
+            for agent in self.agents:
+                _, response = agent.reset()
+                responses.append(response)
+                agent.update_env(response)
+                attached_cords_in_last_response.append([])
+                last_lastAction.append(None)
+                last_lastAction_param.append(None)
+                last_task_names.append([])
+                last_tasks.append([])
+            time.sleep(5) # Wait to initialize
             episode_reward = 0
             for step in range(max_steps):
                 actions = self.get_actions(states)
-                next_states, rewards, dones, _ = self.env.step(actions)
+                # Send all actions
+                for i,action in enumerate(actions):
+                    if isinstance(action_dict[action],
+                        ActionSubmit):  # TODO Could be performance improved by using max_key in utils
+                        action_dict[action].init_task_name(env.forwarded_task_names[i])
+                    self.agents[i].send(action)
+
+                dones = []
+                # Recieve all action-requests
+                for i,agent in enumerate(self.agents):
+                    responses[i] = agent.receive()
+                    dones.append(response[i]["type"] != "request-action")
+                #next_states, rewards, dones, _ = self.env.step(actions)
                 episode_reward += np.mean(rewards)
 
                 if all(dones) or step == max_steps - 1:
