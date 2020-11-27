@@ -130,8 +130,13 @@ class DDPGAgent:
         for target_param, param in zip(self.critic_target.parameters(), self.critic.parameters()):
             target_param.data.copy_(param.data * self.tau + target_param.data * (1.0 - self.tau))
 
+    def get_state(self):
+        state = np.hstack([x.flatten() for x in self.state])
+        #print("State shape: ", state.shape)
+        return state
+
     def update_env(self, msg):
-        self.state = self.env.update(msg['content']['percept'])
+        self.state = self.env.update(msg['content']['percept'], self.agent_id)
         observation_vector = self.state[0]
         #print("Observation vector: ", observation_vector)
         for obs in observation_vector:

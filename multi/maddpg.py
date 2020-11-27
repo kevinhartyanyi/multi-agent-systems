@@ -5,6 +5,7 @@ from agent import DDPGAgent
 from utils import MultiAgentReplayBuffer
 
 from ma_action_classes import action_dict
+from utils import calc_reward_v2, get_attached_blocks
 
 class MADDPG:
 
@@ -47,13 +48,14 @@ class MADDPG:
         episode_rewards = []
         for episode in range(max_episode):
             attached_cords_in_last_response = [] # For the calc_reward_v2 function so it won't give points if the agent attaches to an already attached block
-            last_lastAction = []] # Best name EUNE (for the calc_reward_v2 function task rewards)
+            last_lastAction = [] # Best name EUNE (for the calc_reward_v2 function task rewards)
             last_lastAction_param = [] # Best name EUW
             last_task_names = []
             last_tasks = []
             responses = []
+            states = []
 
-            states = self.env.reset(monitor=monitor)
+            self.env.reset(monitor=monitor)
             for agent in self.agents:
                 _, response = agent.reset()
                 responses.append(response)
@@ -63,6 +65,7 @@ class MADDPG:
                 last_lastAction_param.append(None)
                 last_task_names.append([])
                 last_tasks.append([])
+                states.append(agent.get_state())
             time.sleep(5) # Wait to initialize
             episode_reward = 0
             for step in range(max_steps):
@@ -84,12 +87,30 @@ class MADDPG:
 
                 if all(dones) or step == max_steps - 1:
                     dones = [1 for _ in range(self.num_agents)]
+                    rewards = [torch.tensor([[0]]) for _ in range(self.num_agents)]
+                    next_states = [None for _ in range(self.num_agents)]
                     self.replay_buffer.push(states, actions, rewards, next_states, dones)
                     episode_rewards.append(episode_reward)
                     print("episode: {}  |  reward: {}  \n".format(episode, np.round(episode_reward, decimals=4)))
                     break
                 else:
                     dones = [0 for _ in range(self.num_agents)]
+                    rewards = []
+                    for i, agent in enumerate(self.agents):
+                        last_last_action_and_param[i] = (last_lastAction[i], last_lastAction_param[i])
+                        rew = calc_reward_v2(response['content']['percept'], last_task_names[i], last_tasks[i], attached_cords_in_last_response[i], last_last_action_and_param[i])
+                        attached_cords_in_last_response[i] = get_attached_blocks(response['content']['percept']['things'],
+                                                                              response['content']['percept']['attached'], cords=True)
+                        last_lastAction[i] = response['content']['percept']['lastAction']
+                        last_lastAction_param[i] =  response['content']['percept']['lastActionParams'][0]
+                        last_task_names[i] = env.forwarded_task_names[i]
+                        last_tasks[i] = env.forwarded_task[i]
+
+                        collect_rewards.append(rew)
+                        selected_actions.append(action.item())
+                        selected_action_dict[action.item()].append(rew)
+                        rewards.append(torch.tensor([[rew]])
+
                     self.replay_buffer.push(states, actions, rewards, next_states, dones)
                     states = next_states
 

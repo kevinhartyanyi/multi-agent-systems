@@ -2,7 +2,7 @@ import numpy as np
 from subprocess import Popen, PIPE
 
 import ma_assumptions
-from utils import vision_grid_size
+from utils import * #vision_grid_size
 
 class MultiAgentEnv():
     def __init__(self):
@@ -76,28 +76,28 @@ class MultiAgentEnv():
 
         return obs_n, reward_n, done_n, info_n
 
-    def get_state_size(self):
-        return self.vision_grid[0].size + self.agent_attached[0].size + self.forwarded_task[0].size + self.energy[0].size
+    def get_state_size(self, agent_id=0):
+        return self.vision_grid[agent_id].size + self.agent_attached[agent_id].size + self.forwarded_task[agent_id].size + self.energy[agent_id].size
 
-    def update(self, msg):
+    def update(self, msg, agent_id):
         # Things and Terrain
         observation_map = init_vision_grid(self.agent_vision)
         things = msg['things']
         terrain = msg['terrain']
         # print(f"\n\n\nThings: {things}")
         # print(f"Terrain: {terrain}")
-        self.energy[0] = msg['energy']
+        self.energy[agent_id][0] = msg['energy']
         attached = msg['attached'] # List of coordinates
 
         if len(attached) > 0:
 
             # Update agent_attached
             attached = np.asarray(attached)
-            size_diff = self.agent_attached.shape[0] - attached.shape[0]
+            size_diff = self.agent_attached[agent_id].shape[0] - attached.shape[0]
             if size_diff > 0:
-                self.agent_attached = np.vstack([attached, assumptions.IGNORE * np.ones((size_diff, 2)) ])
+                self.agent_attached[agent_id] = np.vstack([attached, ma_assumptions.IGNORE * np.ones((size_diff, 2)) ])
             else:
-                self.agent_attached = attached[:self.agent_attached.shape[0], :] # Just a precaution, in case agent_attached isnt large enough
+                self.agent_attached[agent_id] = attached[:self.agent_attached[agent_id].shape[0], :] # Just a precaution, in case agent_attached isnt large enough
 
         for th in things:
             x = th["x"]
@@ -129,7 +129,7 @@ class MultiAgentEnv():
                 pass
 
 
-        self.vision_grid = np.asarray(observation_map)
+        self.vision_grid[agent_id] = np.asarray(observation_map)
 
 
 
@@ -165,34 +165,34 @@ class MultiAgentEnv():
 
         # Check if stored task is still active
         task_names = [t[0] for t in preprocessed_tasks]
-        for i, name in enumerate(self.forwarded_task_names):
-            if name not in task_names and name != str(assumptions.IGNORE):  # Delete if task is over
-                self.forwarded_task[i] = assumptions.IGNORE * np.ones(2 + assumptions.TASK_SIZE * 3)
+        for i, name in enumerate(self.forwarded_task_names[agent_id]):
+            if name not in task_names and name != str(ma_assumptions.IGNORE):  # Delete if task is over
+                self.forwarded_task[agent_id][i] = ma_assumptions.IGNORE * np.ones(2 + ma_assumptions.TASK_SIZE * 3)
             elif name in task_names:  # Update otherwise
                 for t in preprocessed_tasks:
                     if t[0] == name:
-                        self.forwarded_task[i] = np.asarray(t[1:])
+                        self.forwarded_task[agent_id][i] = np.asarray(t[1:])
                         break
 
 
-        free_places = [i for i, n in enumerate(self.forwarded_task_names) if n == str(assumptions.IGNORE)]
-        not_stored_yet = [i for i, n in enumerate(preprocessed_tasks) if n[0] not in self.forwarded_task_names]
+        free_places = [i for i, n in enumerate(self.forwarded_task_names[agent_id]) if n == str(ma_assumptions.IGNORE)]
+        not_stored_yet = [i for i, n in enumerate(preprocessed_tasks) if n[0] not in self.forwarded_task_names[agent_id]]
         while len(free_places) > 0 and len(not_stored_yet) > 0:
-            self.forwarded_task[free_places[0]] = np.asarray(preprocessed_tasks[not_stored_yet[0]][1:])
+            self.forwarded_task[agent_id][free_places[0]] = np.asarray(preprocessed_tasks[not_stored_yet[0]][1:])
 
-            self.forwarded_task_names[free_places[0]] = preprocessed_tasks[not_stored_yet[0]][0]
-            free_places = [i for i, n in enumerate(self.forwarded_task_names) if n == str(assumptions.IGNORE)]
-            not_stored_yet = [i for i, n in enumerate(preprocessed_tasks) if n[0] not in self.forwarded_task_names]
+            self.forwarded_task_names[agent_id][free_places[0]] = preprocessed_tasks[not_stored_yet[0]][0]
+            free_places = [i for i, n in enumerate(self.forwarded_task_names[agent_id]) if n == str(ma_assumptions.IGNORE)]
+            not_stored_yet = [i for i, n in enumerate(preprocessed_tasks) if n[0] not in self.forwarded_task_names[agent_id]]
 
         if False:
             print("Task List")
-            for i in range(len(self.forwarded_task_names)):
-                print(f"Task name: {self.forwarded_task_names[i]} \t values: {self.forwarded_task[i]}")
+            for i in range(len(self.forwarded_task_names[agent_id])):
+                print(f"Task name: {self.forwarded_task_names[agent_id][i]} \t values: {self.forwarded_task[agent_id][i]}")
 
 
-        self.state = np.asarray([self.vision_grid, self.agent_attached, self.forwarded_task, self.energy])
+        self.state[agent_id] = np.asarray([self.vision_grid[agent_id], self.agent_attached[agent_id], self.forwarded_task[agent_id], self.energy[agent_id]])
 
-        return self.state
+        return self.state[agent_id]
 
 """ To be implemented:
     env.observation_space[agent_id].shape[0]
