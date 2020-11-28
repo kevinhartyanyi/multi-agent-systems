@@ -1,8 +1,11 @@
+from maddpg import MADDPG
+from multiagentenv import MultiAgentEnv
 
+if __name__ == "__main__":
+    num_agents = 3
+    num_episodes = 11
+    num_steps = 10
 
-if __main__():
-    NUM_AGENTS = 3
-    num_episodes = 500
-    num_steps = 500
-    
-    pass
+    env = MultiAgentEnv(num_agents)
+    ma_controller = MADDPG(env, 1000000)
+    ma_controller.run(num_episodes, num_steps,32, monitor=True)

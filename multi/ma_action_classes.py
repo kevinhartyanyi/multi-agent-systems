@@ -1,33 +1,4 @@
-from server_env import find_ind_in_observation_np_array # Change to utils.find_coord_index REMOVE THIS
-
 import ma_assumptions
-
-action_dict = {
-    0: ActionSkip(),
-    1: ActionMove("n"),
-    2: ActionMove("s"),
-    3: ActionMove("e"),
-    4: ActionMove("w"),
-    5: ActionAttach("n"),
-    6: ActionAttach("s"),
-    7: ActionAttach("e"),
-    8: ActionAttach("w"),
-    9: ActionDetach("n"),
-    10: ActionDetach("s"),
-    11: ActionDetach("e"),
-    12: ActionDetach("w"),
-    13: ActionRotate("cw"),
-    14: ActionRotate("ccw"),
-    15: ActionRequest("n"),
-    16: ActionRequest("s"),
-    17: ActionRequest("e"),
-    18: ActionRequest("w")
-}
-# Add Submit actions
-max_key = max(action_dict.keys()) + 1
-for i in range(ma_assumptions.TASK_NUM):
-    action_dict[max_key] = ActionSubmit(i)
-    max_key += 1
 
 class Action:
     def __init__(self):
@@ -177,3 +148,30 @@ class ActionSubmit(Action):
 
     def print(self, reward):
         print(f"\n\nCurrent action: \n\tSubmit: {self.param[0]} \t Reward: {reward}")
+
+action_dict = {
+    0: ActionSkip(),
+    1: ActionMove("n"),
+    2: ActionMove("s"),
+    3: ActionMove("e"),
+    4: ActionMove("w"),
+    5: ActionAttach("n"),
+    6: ActionAttach("s"),
+    7: ActionAttach("e"),
+    8: ActionAttach("w"),
+    9: ActionDetach("n"),
+    10: ActionDetach("s"),
+    11: ActionDetach("e"),
+    12: ActionDetach("w"),
+    13: ActionRotate("cw"),
+    14: ActionRotate("ccw"),
+    15: ActionRequest("n"),
+    16: ActionRequest("s"),
+    17: ActionRequest("e"),
+    18: ActionRequest("w")
+}
+# Add Submit actions
+max_key = max(action_dict.keys()) + 1
+for i in range(ma_assumptions.TASK_NUM):
+    action_dict[max_key] = ActionSubmit(i)
+    max_key += 1

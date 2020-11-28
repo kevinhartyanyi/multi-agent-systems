@@ -4,7 +4,10 @@ import numpy as np
 from agent import DDPGAgent
 from utils import MultiAgentReplayBuffer
 
-from ma_action_classes import action_dict
+import time
+import matplotlib.pyplot as plt
+
+from ma_action_classes import action_dict, ActionSubmit
 from utils import calc_reward_v2, get_attached_blocks
 
 class MADDPG:
@@ -46,6 +49,11 @@ class MADDPG:
 
     def run(self, max_episode, max_steps, batch_size, monitor=False):
         episode_rewards = []
+        selected_actions = []
+        selected_action_dict = {}
+        for act in action_dict.keys():
+            selected_action_dict[act] = []
+
         for episode in range(max_episode):
             attached_cords_in_last_response = [] # For the calc_reward_v2 function so it won't give points if the agent attaches to an already attached block
             last_lastAction = [] # Best name EUNE (for the calc_reward_v2 function task rewards)
@@ -57,8 +65,11 @@ class MADDPG:
 
             self.env.reset(monitor=monitor)
             for agent in self.agents:
-                _, response = agent.reset()
+                _, _ = agent.reset()
+            for agent in self.agents:
+                response = agent.receive()
                 responses.append(response)
+                #print(response)
                 agent.update_env(response)
                 attached_cords_in_last_response.append([])
                 last_lastAction.append(None)
@@ -66,30 +77,35 @@ class MADDPG:
                 last_task_names.append([])
                 last_tasks.append([])
                 states.append(agent.get_state())
-            time.sleep(5) # Wait to initialize
+            time.sleep(2) # Wait to initialize
+
+            #self.env.start_server()
             episode_reward = 0
+
             for step in range(max_steps):
                 actions = self.get_actions(states)
                 # Send all actions
                 for i,action in enumerate(actions):
+                    action = np.where(action==1.)[0][0]
+                    #print(action)
                     if isinstance(action_dict[action],
                         ActionSubmit):  # TODO Could be performance improved by using max_key in utils
-                        action_dict[action].init_task_name(env.forwarded_task_names[i])
+                        action_dict[action].init_task_name(self.env.forwarded_task_names[i])
                     self.agents[i].send(action)
 
                 dones = []
                 # Recieve all action-requests
                 for i,agent in enumerate(self.agents):
                     responses[i] = agent.receive()
-                    dones.append(response[i]["type"] != "request-action")
+                    dones.append(responses[i]["type"] != "request-action")
                 #next_states, rewards, dones, _ = self.env.step(actions)
-                episode_reward += np.mean(rewards)
 
+                next_states = []
                 if all(dones) or step == max_steps - 1:
                     dones = [1 for _ in range(self.num_agents)]
                     rewards = [torch.tensor([[0]]) for _ in range(self.num_agents)]
                     next_states = [None for _ in range(self.num_agents)]
-                    self.replay_buffer.push(states, actions, rewards, next_states, dones)
+                    #self.replay_buffer.push(states, actions, rewards, next_states, dones)
                     episode_rewards.append(episode_reward)
                     print("episode: {}  |  reward: {}  \n".format(episode, np.round(episode_reward, decimals=4)))
                     break
@@ -97,22 +113,68 @@ class MADDPG:
                     dones = [0 for _ in range(self.num_agents)]
                     rewards = []
                     for i, agent in enumerate(self.agents):
-                        last_last_action_and_param[i] = (last_lastAction[i], last_lastAction_param[i])
-                        rew = calc_reward_v2(response['content']['percept'], last_task_names[i], last_tasks[i], attached_cords_in_last_response[i], last_last_action_and_param[i])
-                        attached_cords_in_last_response[i] = get_attached_blocks(response['content']['percept']['things'],
-                                                                              response['content']['percept']['attached'], cords=True)
-                        last_lastAction[i] = response['content']['percept']['lastAction']
-                        last_lastAction_param[i] =  response['content']['percept']['lastActionParams'][0]
-                        last_task_names[i] = env.forwarded_task_names[i]
-                        last_tasks[i] = env.forwarded_task[i]
+                        agent.update_env(responses[i])
+                        action = np.where(actions[i]==1.)[0][0]
+                        if responses[i]["content"]["percept"]["lastActionResult"]=="success" and 0<action<5:
+                            agent.update_coords(action)
 
-                        collect_rewards.append(rew)
-                        selected_actions.append(action.item())
-                        selected_action_dict[action.item()].append(rew)
-                        rewards.append(torch.tensor([[rew]])
+                        next_states.append(agent.get_state())
+                        last_last_action_and_param = (last_lastAction[i], last_lastAction_param[i])
+                        rew = calc_reward_v2(responses[i]['content']['percept'], last_task_names[i], last_tasks[i], attached_cords_in_last_response[i], last_last_action_and_param)
+                        attached_cords_in_last_response[i] = get_attached_blocks(responses[i]['content']['percept']['things'],
+                                                                              responses[i]['content']['percept']['attached'], cords=True)
+                        last_lastAction[i] = responses[i]['content']['percept']['lastAction']
+                        last_lastAction_param[i] =  responses[i]['content']['percept']['lastActionParams'][0]
+                        last_task_names[i] = self.env.forwarded_task_names[i]
+                        last_tasks[i] = self.env.forwarded_task[i]
+
+                        action = np.where(actions[i]==1.)[0][0]
+                        #selected_actions.append(action)
+                        selected_action_dict[action].append(rew)
+                        rewards.append(torch.tensor([[rew]]))
+
+                        episode_reward += np.mean(rewards)
 
                     self.replay_buffer.push(states, actions, rewards, next_states, dones)
                     states = next_states
 
                     if len(self.replay_buffer) > batch_size:
                         self.update(batch_size)
+
+            self.env.kill_server()
+            if episode % 10 == 0:
+                self.plot_rewards(episode_rewards, episode)
+                self.plot_double_action(selected_action_dict, episode)
+
+    def plot_rewards(self, rewards, name):
+        plt.clf()
+        plt.plot(rewards)
+        plt.title('Training Avg Rewards')
+        plt.xlabel('Episode number')
+        plt.ylabel('Average Reward')
+        plt.savefig(f"plots/Rewards_reward2_{name}.png")
+
+    def plot_double_action(self, actions, name):
+
+        failed = [len(list(filter(lambda y: y < 0, v))) for k, v in actions.items()]
+        correct = [len(list(filter(lambda y: y >= 0, v))) for k, v in actions.items()]
+
+
+        plt.clf()
+        fig, ax = plt.subplots(figsize=(20, 10))
+        #n, bins, patches = ax.hist([failed, correct], list(range(len(action_dict))), density=True, histtype='bar', stacked=True)
+
+        N = len(action_dict)
+        ind = np.arange(N)  # the x locations for the groups
+        width = 0.35  # the width of the bars: can also be len(x) sequence
+
+        p1 = plt.bar(ind, correct, width)
+        p2 = plt.bar(ind, failed, width)
+
+        ax.set_xlabel('Actions')
+        ax.set_ylabel('Number of times chosen by the agent')
+        ax.set_title('Actions Histogram')
+        ax.set_xticks(list(range(len(action_dict))))
+        plt.legend((p1[0], p2[0]), ('Correct', 'Failed'))
+        #plt.show()
+        plt.savefig(f"plots/Actions_histogram_reward_{name}.png")

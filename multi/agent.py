@@ -6,10 +6,12 @@ import numpy as np
 
 from model import CentralizedCritic, Actor
 
-import json, socket
+import json, socket, time
 
 import ma_assumptions
-from ma_message_classes import AuthRequest
+from ma_message_classes import AuthRequest, ActionReply
+from ma_action_classes import action_dict
+from utils import find_coord_index
 
 
 class DDPGAgent:
@@ -29,12 +31,12 @@ class DDPGAgent:
 
         self.state = None
 
-        self.step = np.array([0, ma_assumptions.STEP_NUM]) # current step, assumptions.STEP_NUM (Will certainly be updated, no need to set to assumptions.IGNORE)
+        self.step = np.array([0, ma_assumptions.STEP_NUM]) # current step, ma_assumptions.STEP_NUM (Will certainly be updated, no need to set to ma_assumptions.IGNORE)
         self.dispensers = ma_assumptions.IGNORE * np.ones((ma_assumptions.DISPENSER_NUM, 3))
         self.walls = ma_assumptions.IGNORE * np.ones((ma_assumptions.WALL_NUM, 2))
 
         num_inputs = self.step.size + self.dispensers.size + self.walls.size
-        print("NUM_INPUTS:", num_inputs)
+
         num_actions = len(action_dict)
 
         self.device = "cpu"
@@ -42,7 +44,8 @@ class DDPGAgent:
         if self.use_cuda:
             self.device = "cuda"
 
-        self.obs_dim = num_inputs
+        self.obs_dim = env.observation_space(self.agent_id)+num_inputs
+        print("NUM_INPUTS:", self.obs_dim)
         self.action_dim = num_actions
         self.num_agents = self.env.n
 
@@ -151,7 +154,7 @@ class DDPGAgent:
         # Update walls
         new_walls = self.map[(self.map[:,2] == 0) & (self.map[:,3] == 0) & (self.map[:,4] == 2)][:,:2]
 
-        empty_wall = np.where(self.walls[:,0] == assumptions.IGNORE)[0]
+        empty_wall = np.where(self.walls[:,0] == ma_assumptions.IGNORE)[0]
         new_walls_count = 0
         while new_walls_count < len(new_walls) and 0 < len(empty_wall):
             if new_walls[new_walls_count].tolist() not in self.walls.tolist():
@@ -161,7 +164,7 @@ class DDPGAgent:
 
         # Update dispensers
         new_dispensers = self.map[(self.map[:,2] == 3)][:,:4]
-        empty_dispensers = np.where(self.dispensers[:,0] == assumptions.IGNORE)[0]
+        empty_dispensers = np.where(self.dispensers[:,0] == ma_assumptions.IGNORE)[0]
         new_dispensers_count = 0
         while new_dispensers_count < len(new_dispensers) and 0 < len(empty_dispensers):
             if new_dispensers[new_dispensers_count][:2].tolist() not in self.dispensers[:,:2].tolist():
@@ -173,6 +176,24 @@ class DDPGAgent:
         # Final state of state ;)
         self.state = np.array([data for data in self.state] + [self.step, self.walls, self.dispensers])
         #print("State shape:", self.state.shape)
+
+    def update_coords(self, direction: int):
+        if direction == 1:
+            self.map[:, 1] += 1
+            self.walls[:,1][self.walls[:,1] != ma_assumptions.IGNORE] += 1
+            self.dispensers[:,1][self.dispensers[:,1] != ma_assumptions.IGNORE] += 1
+        elif direction == 2:
+            self.map[:, 1] -= 1
+            self.walls[:,1][self.walls[:,1]  != ma_assumptions.IGNORE] -= 1
+            self.dispensers[:,1][self.dispensers[:,1]  != ma_assumptions.IGNORE] -= 1
+        elif direction == 3:
+            self.map[:, 0] -= 1
+            self.walls[:,0][self.walls[:,0] != ma_assumptions.IGNORE] -= 1
+            self.dispensers[:,0][self.dispensers[:,0] != ma_assumptions.IGNORE] -= 1
+        elif direction == 4:
+            self.map[:, 0] += 1
+            self.walls[:,0][self.walls[:,0] != ma_assumptions.IGNORE] += 1
+            self.dispensers[:,0][self.dispensers[:,0] != ma_assumptions.IGNORE] += 1
 
     def connect(self, host: str = "127.0.0.1", port: int = 12300):
 
@@ -218,16 +239,17 @@ class DDPGAgent:
         """
         agent_message = ActionReply(self.request_id, action_dict[action])
         msg = agent_message.msg()
-        #print(f"Sending: {msg}")
+        print(f"Sending: {msg}")
         self.sock.sendall(msg.encode())
 
     def receive(self):
         """ Receive message from the server
         """
         while True:
-            recv = self.sock.recv(4096).decode("ascii").rstrip('\x00')
+            recv = self.sock.recv(8192).decode("ascii").rstrip('\x00')
             if recv != "":
                 break
+        print(recv)
         response = json.loads(recv.rstrip('\x00'))
         #print(f"Response: {response}")
         if response['type'] == "request-action":

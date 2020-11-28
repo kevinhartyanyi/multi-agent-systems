@@ -1,13 +1,15 @@
 import numpy as np
 from subprocess import Popen, PIPE
+import time
 
 import ma_assumptions
 from utils import * #vision_grid_size
 
 class MultiAgentEnv():
-    def __init__(self):
+    def __init__(self, num_agents):
         self.agent_vision = ma_assumptions.VISION_RANGE
-        self.n = ma_assumptions.NUM_AGENTS
+        self.n = num_agents #ma_assumptions.NUM_AGENTS
+        self.process = None
 
         self.vision_grid = []
         self.agent_attached = []
@@ -33,17 +35,28 @@ class MultiAgentEnv():
             self.state.append(None)
 
     def reset(self, monitor=False):
-        self.__init__()
-        if monitor:
-            process = Popen(
-                ["java", "-jar", "massim-2019-2.0/server/server-2019-2.1-jar-with-dependencies.jar", "--monitor", "8000",
-                 "-conf", "massim-2019-2.0/server/conf/SampleConfig-Deliverable1.json"],
-                stdout=PIPE, stderr=PIPE, stdin=PIPE)
-        else:
-            process = Popen(
-                ["java", "-jar", "massim-2019-2.0/server/server-2019-2.1-jar-with-dependencies.jar",
-                 "-conf", "massim-2019-2.0/server/conf/SampleConfig-Deliverable1.json"],
-                stdout=PIPE, stderr=PIPE, stdin=PIPE)
+        self.__init__(self.n)
+        if True:
+            if monitor:
+                self.process = Popen(
+                    ["java", "-jar", "../massim-2019-2.0/server/server-2019-2.1-jar-with-dependencies.jar", "--monitor", "8000",
+                     "-conf", "../massim-2019-2.0/server/conf/SampleConfig-Deliverable2.json"],
+                    stdout=PIPE, stderr=PIPE, stdin=PIPE)
+            else:
+                self.process = Popen(
+                    ["java", "-jar", "../massim-2019-2.0/server/server-2019-2.1-jar-with-dependencies.jar",
+                     "-conf", "../massim-2019-2.0/server/conf/SampleConfig-Deliverable2.json"],
+                    stdout=PIPE, stderr=PIPE, stdin=PIPE)
+        print("STARTED")
+        time.sleep(5)
+        self.start_server()
+
+    def start_server(self):
+        self.process.stdin.write(b'\n')
+        self.process.stdin.flush()
+
+    def kill_server(self):
+        self.process.kill()
 
     def observation_space(self, agent_id):
         return self.vision_grid[agent_id].size + self.agent_attached[agent_id].size + self.forwarded_task[agent_id].size + self.energy[agent_id].size
@@ -193,11 +206,3 @@ class MultiAgentEnv():
         self.state[agent_id] = np.asarray([self.vision_grid[agent_id], self.agent_attached[agent_id], self.forwarded_task[agent_id], self.energy[agent_id]])
 
         return self.state[agent_id]
-
-""" To be implemented:
-    env.observation_space[agent_id].shape[0]
-    env.action_space[agent_id].n
-    env.n
-    env.reset()
-    env.step(actions) - next_states, rewards, dones, _
-"""
