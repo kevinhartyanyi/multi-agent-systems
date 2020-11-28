@@ -99,6 +99,7 @@ class AgentCommunication:
         done = False
         #print("Comm start send")
         for i, agent in enumerate(self.agents):
+            print("Send action: ", actions[i])
             agent.send(actions[i])
 
         #print("Comm start receive")
