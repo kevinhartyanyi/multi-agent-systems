@@ -1,8 +1,8 @@
 """
     ### State codes
-        
+
         ## -1 UNKNOWN
-        
+
         ## Things
             0. - empty
             1. - entity (2)
@@ -15,17 +15,17 @@
             3. - dispenser (block_num) # dispenser_num number of dispensers, but their types can be block_num
                 0. - b0
                 1. - b1
-                2. - b2                
+                2. - b2
             4. - marker (3?)
                 0. - clear
                 1. - ci ('clear immediately')
                 2. - cp ('clear perimeter')
-                
+
         ## Terrain
             0. - empty
             1. - goal
             2. - obstacle
-            
+
         ## Tasks (task_num)
             We store a predefined number of tasks in the environment. At every iteration we check if the task
             is still available from the agent's perception. We store the names and associate them with indices.
@@ -37,7 +37,7 @@
                 - x
                 - y
                 - BLOCK_NUM
-            
+
     ### Things we assume we know
         - VISION_RANGE (5) -> the range of vision of our agent
         - STEP_NUM (500) -> the number of steps in the game
@@ -45,7 +45,7 @@
         - TASK_SIZE (1) -> the maximum number of blocks used in a task
         - BLOCK_NUM (3) -> maximum number of different types of blocks
         - DISPENSER_NUM (3) -> maximum number of dispensers
-        
+
     ### Network inputs -> Probably DQN
         # Normalize inputs??
         # Last action details of relevance?? -> probably not since fail chance is 0
@@ -99,7 +99,7 @@
     18. - request[w]
     19 -> 19+task_num. - submit[0-task_num]
 
-        
+
         # Currently not used actions
         - connect (x, y, agent)
         - disconnect (x1, y1, attachment1, x2, y2, attachment2)

@@ -13,6 +13,12 @@ from ma_message_classes import AuthRequest, ActionReply
 from ma_action_classes import action_dict
 from utils import find_coord_index
 
+move_dict = {
+    "n": 1,
+    "s": 2,
+    "e": 3,
+    "w": 4
+}
 
 class DDPGAgent:
 
@@ -41,8 +47,9 @@ class DDPGAgent:
 
         self.device = "cpu"
         self.use_cuda = torch.cuda.is_available()
-        if self.use_cuda:
-            self.device = "cuda"
+        #if self.use_cuda:
+        #    self.device = "cuda"
+        # GPU bugs when wanting to plot
 
         self.obs_dim = env.observation_space(self.agent_id)+num_inputs
         print("NUM_INPUTS:", self.obs_dim)
@@ -140,6 +147,13 @@ class DDPGAgent:
 
     def update_env(self, msg):
         self.state = self.env.update(msg['content']['percept'], self.agent_id)
+        if msg["content"]["percept"]["lastActionResult"]=="success" and msg["content"]["percept"]["lastAction"]=="move":
+            action = msg["content"]["percept"]["lastActionParams"][0]
+            action = move_dict[action]
+            print("Action", action, self.agent_id)
+            self.update_coords(action)
+        else:
+            print("NO ACTION", self.agent_id)
         observation_vector = self.state[0]
         #print("Observation vector: ", observation_vector)
         for obs in observation_vector:
@@ -177,6 +191,12 @@ class DDPGAgent:
         self.state = np.array([data for data in self.state] + [self.step, self.walls, self.dispensers])
         #print("State shape:", self.state.shape)
 
+        # Visualization
+        self._visualize_map()
+        print("Current wall\n", self.walls)
+        print("Current dispensers\n", self.dispensers)
+        print("Current attached\n", self.state[1])
+
     def update_coords(self, direction: int):
         if direction == 1:
             self.map[:, 1] += 1
@@ -194,6 +214,42 @@ class DDPGAgent:
             self.map[:, 0] += 1
             self.walls[:,0][self.walls[:,0] != ma_assumptions.IGNORE] += 1
             self.dispensers[:,0][self.dispensers[:,0] != ma_assumptions.IGNORE] += 1
+
+    def _visualize_map(self):
+        minX = np.amin(self.map[:,0])
+        maxX = np.amax(self.map[:,0])
+
+        minY = np.amin(self.map[:,1])
+        maxY = np.amax(self.map[:,1])
+
+        cols = abs(minX) + maxX + 1
+        rows = abs(minY) + maxY + 1
+        print("Agent:", self.agent_id)
+        print(rows, cols)
+
+
+        things_type_map = np.zeros((rows, cols)) - 1
+        things_details_map = np.zeros((rows, cols)) - 1
+        terrain_map = np.zeros((rows, cols)) - 1
+
+        for value in self.map:
+            x, y = value[:2]
+            x = x + abs(minX)
+            y = y + abs(minY)
+            things_type_map[y, x] = value[2]
+            things_details_map[y, x] = value[3]
+            terrain_map[y, x] = value[4]
+
+        print("Map shape: ", things_type_map.shape)
+
+        print("Things type map: ")
+        print(things_type_map)
+
+        print("Things details map: ")
+        print(things_details_map)
+
+        print("Terrain map: ")
+        print(terrain_map)
 
     def connect(self, host: str = "127.0.0.1", port: int = 12300):
 

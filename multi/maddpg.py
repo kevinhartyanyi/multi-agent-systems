@@ -86,7 +86,8 @@ class MADDPG:
                 actions = self.get_actions(states)
                 # Send all actions
                 for i,action in enumerate(actions):
-                    action = np.where(action==1.)[0][0]
+                    cpu_action = action.cpu().numpy()
+                    action = np.where(cpu_action==1.)[0][0]
                     #print(action)
                     if isinstance(action_dict[action],
                         ActionSubmit):  # TODO Could be performance improved by using max_key in utils
@@ -114,9 +115,9 @@ class MADDPG:
                     rewards = []
                     for i, agent in enumerate(self.agents):
                         agent.update_env(responses[i])
-                        action = np.where(actions[i]==1.)[0][0]
-                        if responses[i]["content"]["percept"]["lastActionResult"]=="success" and 0<action<5:
-                            agent.update_coords(action)
+                        #action = np.where(actions[i].==1.)[0][0]
+                        #if responses[i]["content"]["percept"]["lastActionResult"]=="success" and 0<action<5:
+                        #    agent.update_coords(action)
 
                         next_states.append(agent.get_state())
                         last_last_action_and_param = (last_lastAction[i], last_lastAction_param[i])
@@ -128,7 +129,8 @@ class MADDPG:
                         last_task_names[i] = self.env.forwarded_task_names[i]
                         last_tasks[i] = self.env.forwarded_task[i]
 
-                        action = np.where(actions[i]==1.)[0][0]
+                        cpu_action = actions[i].cpu().numpy()
+                        action = np.where(cpu_action==1.)[0][0]
                         #selected_actions.append(action)
                         selected_action_dict[action].append(rew)
                         rewards.append(torch.tensor([[rew]]))
