@@ -9,14 +9,16 @@ import matplotlib.pyplot as plt
 
 from ma_action_classes import action_dict, ActionSubmit
 from utils import calc_reward_v2, get_attached_blocks
+from log import Log
 
 class MADDPG:
 
-    def __init__(self, env, buffer_maxlen):
+    def __init__(self, env, buffer_maxlen, run_name = "test"):
         self.env = env
         self.num_agents = env.n
         self.replay_buffer = MultiAgentReplayBuffer(self.num_agents, buffer_maxlen)
         self.agents = [DDPGAgent(self.env, i) for i in range(self.num_agents)]
+        self.log = Log(name=run_name)
 
     def get_actions(self, states):
         actions = []
@@ -144,6 +146,10 @@ class MADDPG:
                         self.update(batch_size)
 
             self.env.kill_server()
+            #####
+            self.log.save_rewards(episode_rewards)
+            self.log.save_actions(selected_action_dict)
+            #####
             if episode % 10 == 0:
                 self.plot_rewards(episode_rewards, episode)
                 self.plot_double_action(selected_action_dict, episode)
