@@ -149,3 +149,19 @@ class ActionSubmit(Action):
 
     def print(self, reward):
         print(f"\n\nCurrent action: \n\tSubmit: {self.param[0]} \t Reward: {reward}")
+
+
+class ActionConnect(Action):
+    """
+    """
+
+    def __init__(self):
+        super(ActionConnect, self).__init__()
+        self.type = "connect"
+        self.param = []
+
+    def init_connect(self, agent_name: str, x: int, y: int):
+        self.param = [agent_name, x, y]
+
+    def print(self, reward):
+        print(f"\n\nCurrent action: \n\Connect: {self.param[0]} \t Reward: {reward}")

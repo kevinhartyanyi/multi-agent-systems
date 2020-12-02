@@ -60,7 +60,7 @@ n_actions = len(action_dict)
 policy_net = DQN(25, 24, n_actions).to(device).to(float)
 target_net = DQN(25, 24, n_actions).to(device).to(float)
 
-policy_net.load_state_dict(torch.load("weights/policy_net_best.pth"))
+#policy_net.load_state_dict(torch.load("weights/policy_net_best.pth"))
 target_net.load_state_dict(policy_net.state_dict())
 target_net.eval()
 
@@ -157,7 +157,9 @@ for i_episode in range(num_episodes):
     state = env.reset()
 
     # Start server
-    if monitor:
+    if True:
+        pass
+    elif monitor:
         process = Popen(
             ["java", "-jar", "massim-2019-2.0/server/server-2019-2.1-jar-with-dependencies.jar", "--monitor", "8000",
              "-conf", "massim-2019-2.0/server/conf/SampleConfig-Deliverable1.json"],
@@ -168,13 +170,13 @@ for i_episode in range(num_episodes):
              "-conf", "massim-2019-2.0/server/conf/SampleConfig-Deliverable1.json"],
             stdout=PIPE, stderr=PIPE, stdin=PIPE)
 
-    time.sleep(5)
+    #time.sleep(5)
     agent1.connect()
     assert agent1.init_agent()  # auth-response
     #print("YES")
-    time.sleep(2)
-    process.stdin.write(b'\n')
-    process.stdin.flush()
+    #time.sleep(2)
+    #process.stdin.write(b'\n')
+    #process.stdin.flush()
 
     response = agent1.receive()  # sim-start (vision, step)
     response = agent1.receive()  # request-action
@@ -199,9 +201,9 @@ for i_episode in range(num_episodes):
         action = select_action(state)
 
 
-        #print("Selected action (agent): ", action)
+        print("Selected action (agent): ", action)
 
-        #action = torch.tensor([[int(input("Action:"))]], device=device, dtype=torch.long)
+        action = torch.tensor([[int(input("Action:"))]], device=device, dtype=torch.long)
 
 
 
@@ -209,6 +211,11 @@ for i_episode in range(num_episodes):
         if isinstance(action_dict[action.item()],
             ActionSubmit):  # TODO Could be performance improved by using max_key in utils
             action_dict[action.item()].init_task_name(env.forwarded_task_names)
+        elif isinstance(action_dict[action.item()], ActionConnect):
+            # other_ids = self.agent_ids.remove(self.agents[i].id)
+            other_ids = [i for i in range(4)]
+            closest_agent_name = closest_agent(other_ids, response['content']['percept'])
+            action_dict[action.item()].init_connect(closest_agent_name, 0, 0)
 
         agent1.send(action.item())
         response = agent1.receive()
@@ -244,7 +251,7 @@ for i_episode in range(num_episodes):
             next_state = None
 
         # print("Agent Reward:", reward)
-        #action_dict[action.item()].print(reward.item())
+        action_dict[action.item()].print(reward.item())
         #print("\n")
 
         # Store the transition in memory

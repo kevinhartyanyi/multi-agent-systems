@@ -21,7 +21,8 @@ action_dict = {
     15: ActionRequest("n"),
     16: ActionRequest("s"),
     17: ActionRequest("e"),
-    18: ActionRequest("w")
+    18: ActionRequest("w"),
+    19: ActionConnect()
 }
 # Add Submit actions
 max_key = max(action_dict.keys()) + 1
@@ -256,6 +257,9 @@ def get_distance(things_or_terrain, search_typ, attached=None):
     #print("Distances: ", dists)
     return min(dists) if len(dists) > 0 else -1
 
+
+def closest_agent(agent_names, perception):
+    pass
 
 def calc_reward_v2(perception, last_task_names, last_tasks, attached_cords_in_last_response, last_last_action_and_param) -> int:
     reward = 0

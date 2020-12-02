@@ -149,6 +149,18 @@ class ActionSubmit(Action):
     def print(self, reward):
         print(f"\n\nCurrent action: \n\tSubmit: {self.param[0]} \t Reward: {reward}")
 
+class ActionConnect(Action):
+    """
+    """
+
+    def __init__(self, direction: str):
+        super(ActionRequest, self).__init__()
+        self.type = "connect"
+        self.param = [direction]
+
+    def print(self, reward):
+        print(f"\n\nCurrent action: \n\tRequest: {self.param[0]} \t Reward: {reward}")
+
 action_dict = {
     0: ActionSkip(),
     1: ActionMove("n"),

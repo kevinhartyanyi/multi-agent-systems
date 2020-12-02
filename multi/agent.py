@@ -192,10 +192,10 @@ class DDPGAgent:
         #print("State shape:", self.state.shape)
 
         # Visualization
-        self._visualize_map()
-        print("Current wall\n", self.walls)
-        print("Current dispensers\n", self.dispensers)
-        print("Current attached\n", self.state[1])
+        #self._visualize_map()
+        #print("Current wall\n", self.walls)
+        #print("Current dispensers\n", self.dispensers)
+        #print("Current attached\n", self.state[1])
 
     def update_coords(self, direction: int):
         if direction == 1:
@@ -295,7 +295,7 @@ class DDPGAgent:
         """
         agent_message = ActionReply(self.request_id, action_dict[action])
         msg = agent_message.msg()
-        print(f"Sending: {msg}")
+        print(f"Sending: {msg}\n")
         self.sock.sendall(msg.encode())
 
     def receive(self):
@@ -305,9 +305,9 @@ class DDPGAgent:
             recv = self.sock.recv(8192).decode("ascii").rstrip('\x00')
             if recv != "":
                 break
-        print(recv)
+        #print(recv)
         response = json.loads(recv.rstrip('\x00'))
-        #print(f"Response: {response}")
+        print(f"Response: {response}\n")
         if response['type'] == "request-action":
             self.request_id = response['content']['id']
             self.step[0] = response['content']['step'] # Current steps
