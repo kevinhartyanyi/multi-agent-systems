@@ -192,10 +192,10 @@ class DDPGAgent:
         #print("State shape:", self.state.shape)
 
         # Visualization
-        self._visualize_map()
-        print("Current wall\n", self.walls)
-        print("Current dispensers\n", self.dispensers)
-        print("Current attached\n", self.state[1])
+        #self._visualize_map()
+        #print("Current wall\n", self.walls)
+        #print("Current dispensers\n", self.dispensers)
+        #print("Current attached\n", self.state[1])
 
     def update_coords(self, direction: int):
         if direction == 1:

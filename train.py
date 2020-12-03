@@ -4,7 +4,7 @@ from reinforce_agent import *
 from dqn_network import *
 from subprocess import Popen, PIPE
 import matplotlib.pyplot as plt
-#https://github.com/cyoon1729/Multi-agent-reinforcement-learning/tree/master/MADDPG
+
 def plot_rewards(rewards, name):
     plt.clf()
     plt.plot(rewards)

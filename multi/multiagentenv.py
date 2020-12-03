@@ -155,23 +155,23 @@ class MultiAgentEnv():
             # if len(t["requirements"]) > 1:
             #    input()
             points = t["reward"]
-            requirements = t["requirements"][0]  # TODO: Only using the first requirement
+            requirements = t["requirements"][:ma_assumptions.TASK_SIZE]  # THIS
             name = t["name"]  # TODO: Currently not used
             deadline = t["deadline"]
-            details = requirements["details"]  # TODO: Find a use for this
-            x = requirements["x"]
-            y = requirements["y"]
-            block = requirements["type"]
+            details = [requirement["details"] for requirement in requirements]  # TODO: Find a use for this
+            x = [requirement["x"] for requirement in requirements]
+            y = [requirement["y"] for requirement in requirements]
+            block = [requirement["type"] for requirement in requirements]
 
 
 
 
 
             # Convert block
-            block_num = get_things_details("block", block)
+            block_num = [get_things_details("block", bl) for bl in block]
 
             preprocessed_tasks.append([
-                name, x, y, deadline, points, block_num
+                name, points, deadline, x, y, block_num
             ])
 
         #print("Preprocessed Tasks: \n", preprocessed_tasks)
@@ -184,20 +184,29 @@ class MultiAgentEnv():
             elif name in task_names:  # Update otherwise
                 for t in preprocessed_tasks:
                     if t[0] == name:
-                        self.forwarded_task[agent_id][i] = np.asarray(t[1:])
+                        self.forwarded_task[agent_id][i][0] = t[1]
+                        self.forwarded_task[agent_id][i][1] = t[2]
+                        for req in range(len(t[3])):
+                            self.forwarded_task[agent_id][i][( (req*3)+2 ):( (req*3)+2 ) + 3] = np.asarray([t[3][req], t[4][req], t[5][req]]) # THIS
                         break
 
 
         free_places = [i for i, n in enumerate(self.forwarded_task_names[agent_id]) if n == str(ma_assumptions.IGNORE)]
         not_stored_yet = [i for i, n in enumerate(preprocessed_tasks) if n[0] not in self.forwarded_task_names[agent_id]]
         while len(free_places) > 0 and len(not_stored_yet) > 0:
-            self.forwarded_task[agent_id][free_places[0]] = np.asarray(preprocessed_tasks[not_stored_yet[0]][1:])
+            new_req = preprocessed_tasks[not_stored_yet[0]]
+            self.forwarded_task[agent_id][free_places[0]][0] = new_req[1]
+            self.forwarded_task[agent_id][free_places[0]][1] = new_req[2]
+            for req_i in range(len(new_req[3])):
+                print(( (req_i*3)+2 ), ( (req_i*3)+2 ) + 3)
+                self.forwarded_task[agent_id][free_places[0]][( (req_i*3)+2 ):( (req_i*3)+2 ) + 3] = np.asarray([new_req[3][req_i], new_req[4][req_i], new_req[5][req_i]])
+            #self.forwarded_task[agent_id][free_places[0]] = np.asarray(preprocessed_tasks[not_stored_yet[0]][1:]) # THIS
 
             self.forwarded_task_names[agent_id][free_places[0]] = preprocessed_tasks[not_stored_yet[0]][0]
             free_places = [i for i, n in enumerate(self.forwarded_task_names[agent_id]) if n == str(ma_assumptions.IGNORE)]
             not_stored_yet = [i for i, n in enumerate(preprocessed_tasks) if n[0] not in self.forwarded_task_names[agent_id]]
 
-        if False:
+        if True:
             print("Task List")
             for i in range(len(self.forwarded_task_names[agent_id])):
                 print(f"Task name: {self.forwarded_task_names[agent_id][i]} \t values: {self.forwarded_task[agent_id][i]}")
