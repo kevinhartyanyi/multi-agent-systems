@@ -151,8 +151,14 @@ class MADDPG:
             self.log.save_actions(selected_action_dict)
             #####
             if episode % 10 == 0:
+                torch.save(self.agents[0].actor.state_dict(), f"weights/actor_net_checkpoint_{episode}.pth")
+                torch.save(self.agents[0].critic.state_dict(), f"weights/critic_net_checkpoint_{episode}.pth")
                 self.plot_rewards(episode_rewards, episode)
                 self.plot_double_action(selected_action_dict, episode)
+
+        print("Complete")
+        torch.save(self.agents[0].actor.state_dict(), f"weights/actor_net.pth")
+        torch.save(self.agents[0].critic.state_dict(), f"weights/critic_net.pth")
 
     def plot_rewards(self, rewards, name):
         plt.clf()
