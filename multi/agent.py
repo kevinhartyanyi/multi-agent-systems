@@ -70,9 +70,15 @@ class DDPGAgent:
         for target_param, param in zip(self.actor_target.parameters(), self.actor.parameters()):
             target_param.data.copy_(param.data)
 
+        if True:
+            self.actor.load_state_dict(torch.load("weights/actor_net.pth"))
+            self.critic.load_state_dict(torch.load("weights/critic_net.pth"))
+
         self.MSELoss = nn.MSELoss()
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=critic_lr)
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=actor_lr)
+
+
 
     def get_action(self, state):
         state = np.hstack([x.flatten() for x in self.state] )

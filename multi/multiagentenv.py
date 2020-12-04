@@ -47,9 +47,10 @@ class MultiAgentEnv():
                     ["java", "-jar", "../massim-2019-2.0/server/server-2019-2.1-jar-with-dependencies.jar",
                      "-conf", "../massim-2019-2.0/server/conf/SampleConfig-Deliverable2.json"],
                     stdout=PIPE, stderr=PIPE, stdin=PIPE)
-        print("STARTED")
-        time.sleep(5)
-        self.start_server()
+            print("STARTED")
+            time.sleep(8)
+            self.start_server()
+            time.sleep(2)
 
     def start_server(self):
         self.process.stdin.write(b'\n')

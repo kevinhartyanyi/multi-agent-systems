@@ -98,6 +98,7 @@ class MADDPG:
                 # Recieve all action-requests
                 for i,agent in enumerate(self.agents):
                     responses[i] = agent.receive()
+                    time.sleep(0.1)
                     dones.append(responses[i]["type"] != "request-action")
                 #next_states, rewards, dones, _ = self.env.step(actions)
 
